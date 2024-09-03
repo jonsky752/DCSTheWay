@@ -1,7 +1,7 @@
 class ch47f {
   static slotVariant = ""; // Holds the variant type
   static #device_id = 3; // Device ID, private
-  static extraDelay = 200; // Extra delay constant
+  static extraDelay = 0; // Extra delay constant
   static #delay_value = 10 + this.extraDelay; // Total delay value
   static #delay10 = 10 + this.extraDelay; // 10 ms delay + extra delay
   static #delay50 = 50 + this.extraDelay; // 50 ms delay + extra delay
