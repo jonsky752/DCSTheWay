@@ -2,7 +2,7 @@ class ch47f {
   static slotVariant = ""; // Holds the variant type
   static #device_id = 3; // Device ID, private
   static extraDelay = 0; // Extra delay constant
-  static #delay_value = 10 + this.extraDelay; // Total delay value
+  static #delay_value = 100 + this.extraDelay; // Total delay value
   static #delay10 = 10 + this.extraDelay; // 10 ms delay + extra delay
   static #delay50 = 50 + this.extraDelay; // 50 ms delay + extra delay
   static #delay100 = this.extraDelay + 100; // 100 ms delay + extra delay
@@ -73,7 +73,7 @@ class ch47f {
       this.#codesPayload.push({
         device: this.#device_id,
         code: characterCode,
-        delay: this.#delay10,
+        delay: this.#delay_value,
         activate: 1,
         addDepress: "true",
       });
@@ -234,9 +234,12 @@ class ch47f {
       });
     }
 
-    // Handle different slotVariants after processing waypoints
+
+
+    // New Flight Plan Actions
+
     if (this.slotVariant === "ch47NEW") {
-      // New flight plan actions
+      // Enter DIR mode
       this.#codesPayload.push({
         device: this.#device_id,
         code: this.#kuKeycodes["DIR"],
@@ -245,6 +248,7 @@ class ch47f {
         addDepress: "true",
       });
 
+      // Delete Current Flight Plan
       this.#codesPayload.push({
         device: this.#device_id,
         code: this.#kuKeycodes["L6"],
@@ -261,6 +265,7 @@ class ch47f {
         addDepress: "true",
       });
 
+      //Return to DIR mode
       this.#codesPayload.push({
         device: this.#device_id,
         code: this.#kuKeycodes["DIR"],
@@ -269,10 +274,11 @@ class ch47f {
         addDepress: "true",
       });
 
-      // Iterate over waypoints for the second loop
+      // Enter Waypoints into Flight Plan
       for (let i = 0; i < waypoints.length; i++) {
         const waypoint = waypoints[i];
 
+        //Clear the Scratch Pad - Prevents any errors
         this.#codesPayload.push({
           device: this.#device_id,
           code: this.#kuKeycodes["CLR"],
@@ -281,6 +287,7 @@ class ch47f {
           addDepress: "true",
         });
 
+        // Press / key for Waypoint name
         this.#codesPayload.push({
           device: this.#device_id,
           code: this.#kuKeycodes["/"],
@@ -298,7 +305,7 @@ class ch47f {
           this.#addKeyboardCode(waypoint.name.charAt(i));
         }
 
-        // Press L1 for the first cycle, then L5 for all other cycles
+        // Press LSK-L1 for the first cycle, then LSK-L5 for all other cycles
         if (i === 0) {
           // First cycle
           this.#codesPayload.push({
@@ -328,8 +335,12 @@ class ch47f {
       }
     
     
+    
+    // Add to Existing Flight Plan actions
+    
     } else if (this.slotVariant === "ch47ADD") {
-      // Additional actions for ch47ADD
+      
+      // Enter FPLN mode
       this.#codesPayload.push({
         device: this.#device_id,
         code: this.#kuKeycodes["FPLN"],
@@ -338,7 +349,7 @@ class ch47f {
         addDepress: "true",
       });
 
-      // Press Down arrow a lot to get to end of any length flight plan
+      // Press Down arrow a lot to get to end of any current flight plan
       for (let k = 0; k < 30; k++) {
         this.#codesPayload.push({
           device: this.#device_id,
@@ -349,6 +360,7 @@ class ch47f {
           });
         }
 
+        //Enter Waypoints to end of current Flight Plan
         for (let i = 0; i < waypoints.length; i++) {
         const waypoint = waypoints[i];
 
@@ -377,6 +389,7 @@ class ch47f {
           this.#addKeyboardCode(waypoint.name.charAt(i));
         }
 
+        //Press Down arrow to advance down Flight Plan List
         this.#codesPayload.push({
           device: this.#device_id,
           code: this.#kuKeycodes["DOWN"],
@@ -385,7 +398,7 @@ class ch47f {
           addDepress: "true",
         });
         
-        // Press LSK L5 to enter
+        // Press LSK L5 to enter Waypoint into Flight Plan
         this.#codesPayload.push({
           device: this.#device_id,
           code: this.#kuKeycodes["L5"],

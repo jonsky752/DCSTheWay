@@ -34,6 +34,7 @@ const askUserAboutSeat = async (module, userPreferences) => {
           "3. You are in the 00°00.0000' coordinate format",
       }).then(() => "FA-18C_hornet");
     }
+    
   } else if (module === "F-15ESE") {
     let seat;
     if (moduleSpecificPreferences?.includes("Pilot")) seat = "Pilot";
@@ -118,7 +119,20 @@ const askUserAboutSeat = async (module, userPreferences) => {
         option === "Add Waypoints" ? "a10ADD" : "a10NEW",
       );
     }  
-
+   } else if (module === "AV8BNA") {
+      if (moduleSpecificPreferences?.includes("Waypoints"))
+        return "AV8BNA_WPT";
+      else if (moduleSpecificPreferences?.includes("Targetpoints"))
+        return "AV8BNA_TRGPT";
+      else {
+        return TwoOptionsDialog({
+          title: "Transfer to waypoints or target points?",
+          op1: "Waypoints",
+          op2: "Targetpoints",
+        }).then((option) =>
+          option === "Targetpoints" ? "AV8BNA_TRGPT" : "AV8BNA_WPT",
+      );
+    }
   } else return module;
 };
 

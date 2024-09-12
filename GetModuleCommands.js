@@ -11,6 +11,7 @@ import uh60l from "./uh60l";
 import hercules from "./Hercules";
 import oh58d from "./oh58d";
 import ch47f from "./ch47f";
+import sa342 from "./sa342";
 
 export default function getModuleCommands(module, waypoints, buttonExtraDelay) {
   switch (module) {
@@ -53,9 +54,11 @@ export default function getModuleCommands(module, waypoints, buttonExtraDelay) {
       m2000.extraDelay = buttonExtraDelay;
       return m2000.createButtonCommands(waypoints);
     }
-    case "AV8BNA": {
-      av8b.extraDelay = buttonExtraDelay;
-      return av8b.createButtonCommands(waypoints);
+    case "SA342L":
+    case "SA342M":
+    case "SA342Minigun": {
+      sa342.extraDelay = buttonExtraDelay;
+      return sa342.createButtonCommands(waypoints);
     }
     case "Ka-50":
     case "Ka-50_3": {
@@ -84,24 +87,22 @@ export default function getModuleCommands(module, waypoints, buttonExtraDelay) {
       oh58d.slotVariant = "OH58Dleft-seat";
       return oh58d.createButtonCommands(waypoints);
     }
-    case "ch47ADD": {
-      ch47f.extraDelay = buttonExtraDelay;
-      ch47f.slotVariant = "ch47ADD";
-      return ch47f.createButtonCommands(waypoints);
+    case "AV8BNA_WPT":
+    case "AV8BNA_TRGPT": {
+      av8b.slotVariant = module;
+      av8b.extraDelay = buttonExtraDelay;
+      return av8b.createButtonCommands(waypoints);
     }
+    case "ch47ADD":
     case "ch47NEW": {
+      ch47f.slotVariant = module;
       ch47f.extraDelay = buttonExtraDelay;
-      ch47f.slotVariant = "ch47NEW";
       return ch47f.createButtonCommands(waypoints);
     }
-    case "a10ADD": {
-      a10.extraDelay = buttonExtraDelay;
-      a10.slotVariant = "a10ADD";
-      return a10.createButtonCommands(waypoints);
-    }
+    case "a10ADD":
     case "a10NEW": {
+      a10.slotVariant = module;
       a10.extraDelay = buttonExtraDelay;
-      a10.slotVariant = "a10NEW";
       return a10.createButtonCommands(waypoints);
     }
 

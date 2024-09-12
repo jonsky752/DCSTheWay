@@ -81,7 +81,18 @@ class a10 {
       const waypoint = waypoints[index]; // Access the waypoint using the index
       const waypointNumber = index + 1; // Use the index to get the waypoint number starting at 1
 
+      //Press the CLR key, to avoid CDU INPUT ERROR
+      this.#codesPayload.push({
+        device: 9,
+        code: 3058,
+        delay: this.#delay100,
+        activate: 1,
+        addDepress: "true",
+      });
+
       if (this.slotVariant === "a10ADD") {
+
+        //Press LSK R3 to Create new waypoint
         this.#codesPayload.push({
           device: 9,
           code: 3007,
@@ -98,6 +109,7 @@ class a10 {
           this.#addKeyboardCode(waypointName.charAt(i));  // Type the waypoint number
         }
 
+        //Press LSK L1 to select waypoint to be altered
         this.#codesPayload.push({
           device: 9,
           code: 3001,
