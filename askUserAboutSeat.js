@@ -104,6 +104,21 @@ const askUserAboutSeat = async (module, userPreferences) => {
         option === "Add to FPLN" ? "ch47ADD" : "ch47NEW",
       );
     }
+  } else if (module === "A-10C" ||  module === "A-10C_2") {
+    if (moduleSpecificPreferences?.includes("Add Waypoints"))
+      return "a10ADD";
+    else if (moduleSpecificPreferences?.includes("Overwrite Waypoints"))
+      return "a10NEW";
+    else {
+      return TwoOptionsDialog({
+        title: "Would you like to?",
+        op1: "Add Waypoints",
+        op2: "Overwrite Waypoints",
+      }).then((option) =>
+        option === "Add Waypoints" ? "a10ADD" : "a10NEW",
+      );
+    }  
+
   } else return module;
 };
 

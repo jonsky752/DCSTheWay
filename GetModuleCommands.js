@@ -49,11 +49,6 @@ export default function getModuleCommands(module, waypoints, buttonExtraDelay) {
       ah64.slotVariant = "AH-64D_BLK_IIgunner";
       return ah64.createButtonCommands(waypoints);
     }
-    case "A-10C_2":
-    case "A-10C": {
-      a10.extraDelay = buttonExtraDelay;
-      return a10.createButtonCommands(waypoints);
-    }
     case "M-2000C": {
       m2000.extraDelay = buttonExtraDelay;
       return m2000.createButtonCommands(waypoints);
@@ -99,6 +94,17 @@ export default function getModuleCommands(module, waypoints, buttonExtraDelay) {
       ch47f.slotVariant = "ch47NEW";
       return ch47f.createButtonCommands(waypoints);
     }
+    case "a10ADD": {
+      a10.extraDelay = buttonExtraDelay;
+      a10.slotVariant = "a10ADD";
+      return a10.createButtonCommands(waypoints);
+    }
+    case "a10NEW": {
+      a10.extraDelay = buttonExtraDelay;
+      a10.slotVariant = "a10NEW";
+      return a10.createButtonCommands(waypoints);
+    }
+
     default:
       return [];
   }
