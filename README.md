@@ -74,8 +74,6 @@ Thanks to our GitHub contributors for supporting new modules.
 Images provided by:
 * F15E, F/A-18C: Coffee :coffee:
 * IDF F16s, Superbug F18s: Hayds_93
-* CH47F: Hayds_93 and Jonsky7
-* SA342: Jonsky7
 
 ## For nerds
 The application is built using React.js and Electron. If you'd like to contribute, simply clone the repository and run `npm install`, then `npm run react-start` to start the React page, and `npm run electron-dev` to fire up the Electron side of things.
