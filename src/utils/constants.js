@@ -26,4 +26,8 @@ export const supportedModules = [
   "UH-60L",
   "Hercules",
   "OH58D",
+  "CH-47Fbl1",
+  "SA342L",
+  "SA342M",
+  "SA342Minigun"
 ];

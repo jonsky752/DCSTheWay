@@ -1,5 +1,4 @@
 import Convertors from "./Convertors";
-
 const convert = (dcsWaypoints, module) => {
   switch (module) {
     default:
@@ -15,12 +14,13 @@ const convert = (dcsWaypoints, module) => {
     case "A-10C_2":
     case "A-10C":
     case "Hercules":
-    case "M-2000C": {
+    case "M-2000C":
+    case "AV8BNA": 
+    case "CH-47Fbl1": {
       // lat  00.00.000 DMM
       //long 000.00.000
       let waypoints = [];
       for (const dcsWaypoint of dcsWaypoints) {
-
         const name = dcsWaypoint.name;
         const id = dcsWaypoint.id;
         const dmmLat = Convertors.decimalToDMM(dcsWaypoint.lat);
@@ -81,45 +81,12 @@ const convert = (dcsWaypoints, module) => {
       }
       return waypoints;
     }
-    case "AV8BNA": {
-      // lat 00.00.00 DMS
-      // long 000.00.00
-      let waypoints = [];
-      for (const dcsWaypoint of dcsWaypoints) {
-        const name = dcsWaypoint.name;
-        const id = dcsWaypoint.id;
-        const dmsLat = Convertors.decimalToDMS(dcsWaypoint.lat);
-        const dmsLong = Convertors.decimalToDMS(dcsWaypoint.long);
-        const lat =
-          dmsLat.deg.toString().padStart(2, "0") +
-          "." +
-          dmsLat.min.toString().padStart(2, "0") +
-          "." +
-          dmsLat.sec.toString().padStart(2, "0");
-        const long =
-          dmsLong.deg.toString().padStart(3, "0") +
-          "." +
-          dmsLong.min.toString().padStart(2, "0") +
-          "." +
-          dmsLong.sec.toString().padStart(2, "0");
-        const elev = Math.trunc(Convertors.mToF(dcsWaypoint.elev)).toString();
-        const latHem = dcsWaypoint.lat > 0 ? "N" : "S";
-        const longHem = dcsWaypoint.long > 0 ? "E" : "W";
-        waypoints.push({
-          name,
-          id,
-          lat,
-          long,
-          elev,
-          latHem,
-          longHem,
-        });
-      }
-      return waypoints;
-    }
     case "Mirage-F1EE":
     case "Ka-50":
-    case "Ka-50_3": {
+    case "Ka-50_3":
+    case "SA342L":
+    case "SA342M":
+    case "SA342Minigun":   {
       // lat  00.00.0 DMM
       //long 000.00.0
       let waypoints = [];
@@ -209,5 +176,4 @@ const convert = (dcsWaypoints, module) => {
     }
   }
 };
-
 export default convert;

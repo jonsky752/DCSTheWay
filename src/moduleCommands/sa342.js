@@ -64,7 +64,7 @@ class sa342 {
       });
 
       // Press DEL*6 to Delete Waypoint data
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < 10; i++) {
          this.#codesPayload.push({
           device: 22,
           code: 3023,
@@ -116,7 +116,7 @@ class sa342 {
         });
 
        // Press DEL*7 to Delete Waypoint data
-        for (let i = 0; i < 7; i++) {
+        for (let i = 0; i < 10; i++) {
          this.#codesPayload.push({
           device: 22,
           code: 3023,
