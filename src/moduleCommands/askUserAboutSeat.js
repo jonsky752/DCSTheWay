@@ -34,6 +34,7 @@ const askUserAboutSeat = async (module, userPreferences) => {
           "3. You are in the 00°00.0000' coordinate format",
       }).then(() => "FA-18C_hornet");
     }
+    
   } else if (module === "F-15ESE") {
     let seat;
     if (moduleSpecificPreferences?.includes("Pilot")) seat = "Pilot";
@@ -88,6 +89,48 @@ const askUserAboutSeat = async (module, userPreferences) => {
         op2: "Left Seat",
       }).then((option) =>
         option === "Left Seat" ? "OH58Dleft-seat" : "OH58Dright-seat",
+      );
+    }
+  } else if (module === "CH-47Fbl1") {
+    if (moduleSpecificPreferences?.includes("Add to FLPN"))
+      return "ch47ADD";
+    else if (moduleSpecificPreferences?.includes("Make New FPLN"))
+      return "ch47NEW";
+    else {
+      return TwoOptionsDialog({
+        title: "Would you like to?",
+        op1: "Add to FPLN",
+        op2: "Make New FPLN",
+      }).then((option) =>
+        option === "Add to FPLN" ? "ch47ADD" : "ch47NEW",
+      );
+    }
+  } else if (module === "A-10C" ||  module === "A-10C_2") {
+    if (moduleSpecificPreferences?.includes("Add Waypoints"))
+      return "a10ADD";
+    else if (moduleSpecificPreferences?.includes("Overwrite Waypoints"))
+      return "a10NEW";
+    else {
+      return TwoOptionsDialog({
+        title: "Would you like to?",
+        op1: "Add Waypoints",
+        op2: "Overwrite Waypoints",
+      }).then((option) =>
+        option === "Add Waypoints" ? "a10ADD" : "a10NEW",
+      );
+    }  
+   } else if (module === "AV8BNA") {
+      if (moduleSpecificPreferences?.includes("Waypoints"))
+        return "AV8BNA_WPT";
+      else if (moduleSpecificPreferences?.includes("Targetpoints"))
+        return "AV8BNA_TRGPT";
+      else {
+        return TwoOptionsDialog({
+          title: "Transfer to waypoints or target points?",
+          op1: "Waypoints",
+          op2: "Targetpoints",
+        }).then((option) =>
+          option === "Targetpoints" ? "AV8BNA_TRGPT" : "AV8BNA_WPT",
       );
     }
   } else return module;
