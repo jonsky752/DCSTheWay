@@ -15,13 +15,17 @@ import sa342 from "./sa342";
 
 export default function getModuleCommands(module, waypoints, buttonExtraDelay) {
   switch (module) {
-    case "F-15ESE_pilotA":
-    case "F-15ESE_wsoA":
-    case "F-15ESE_pilotB":
-    case "F-15ESE_wsoB":
-      f15e.slotVariant = module;
-      f15e.extraDelay = buttonExtraDelay;
-      return f15e.createButtonCommands(waypoints);
+    case "F-15ESE_pilotAJDAM":
+      case "F-15ESE_wsoAJDAM":
+      case "F-15ESE_pilotBJDAM":
+      case "F-15ESE_wsoBJDAM":
+      case "F-15ESE_pilotANOJDAM":
+      case "F-15ESE_wsoANOJDAM":
+      case "F-15ESE_pilotBNOJDAM":
+      case "F-15ESE_wsoBNOJDAM":
+        f15e.slotVariant = module;
+        f15e.extraDelay = buttonExtraDelay;
+        return f15e.createButtonCommands(waypoints);
     case "F-16C_50":
     case "F-16D_50":
     case "F-16D_50_NS":
@@ -34,9 +38,14 @@ export default function getModuleCommands(module, waypoints, buttonExtraDelay) {
       return f16.createButtonCommands(waypoints);
     }
     case "FA-18C_hornet":
+    case "FA-18C_hornetPP1":
+    case "FA-18C_hornetPP2":
+    case "FA-18C_hornetPP3":
+    case "FA-18C_hornetPP4":
     case "FA-18E":
     case "FA-18F":
     case "EA-18G": {
+      fa18.slotVariant = module;
       fa18.extraDelay = buttonExtraDelay;
       return fa18.createButtonCommands(waypoints);
     }
