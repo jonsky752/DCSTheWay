@@ -1,6 +1,6 @@
 class f15e {
   static slotVariant = "";
-  static delay = 200;
+  static delay = 100;
   static #f15eNumberCodes = {
     0: 3036,
     1: 3020,
@@ -83,7 +83,7 @@ class f15e {
       jdam = false;
     }
 
-    // Doesnt need to be Splice-Cleared because payload is created *each time* the function is called, and isnt static.
+    // Doesnt need to be Splice-Cleared because payload is created *each time* the function is called, and isn't static.
     let payload = [
       {
         // Clear UFC button
