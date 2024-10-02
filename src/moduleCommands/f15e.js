@@ -83,7 +83,7 @@ class f15e {
       jdam = false;
     }
 
-    // Doesnt need to be Splice-Cleared because payload is created *each time* the function is called, and isn't static.
+    // Enter correct UFC mode and set Base point B
     let payload = [
       {
         // Clear UFC button
@@ -380,6 +380,8 @@ class f15e {
       addDepress: "true",
     });
 
+    // ==================== For JDAM Entry ============================
+
     if (jdam === true) {
       for (const waypoint of waypoints) {
         let waypointNumber = waypoints.indexOf(waypoint) + 1;
@@ -412,7 +414,7 @@ class f15e {
               addDepress: "true",
             },
             {
-              // enter route letter
+              // enter route letter B
               device: f15eUFCDevice,
               code: this.#f15eNumberCodes["B"],
               delay: this.delay,
@@ -473,6 +475,9 @@ class f15e {
           addDepress: "true",
         },
       );
+
+// ==================== Waypoint Entry ==========================
+
     } else {
       payload.push(
         {
