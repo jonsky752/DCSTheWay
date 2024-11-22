@@ -104,7 +104,9 @@ export default function getModuleCommands(module, waypoints, buttonExtraDelay) {
       return av8b.createButtonCommands(waypoints);
     }
     case "ch47ADD":
-    case "ch47NEW": {
+    case "ch47NEW":
+    case "ch47ALTADD":
+    case "ch47ALTNEW": {
       ch47f.slotVariant = module;
       ch47f.extraDelay = buttonExtraDelay;
       return ch47f.createButtonCommands(waypoints);

@@ -409,6 +409,173 @@ class ch47f {
       }
     }
 
+    // New Alternate Flight Plan Actions
+
+    if (this.slotVariant === "ch47ALTNEW") {
+      // Enter ALTN FPLN mode
+      this.#codesPayload.push({
+        device: this.#device_id,
+        code: this.#kuKeycodes["IDX"],
+        delay: this.#delay_value,
+        activate: 1,
+        addDepress: "true",
+      });
+
+      // Enter ALTN FPLN mode
+      this.#codesPayload.push({
+        device: this.#device_id,
+        code: this.#kuKeycodes["L4"],
+        delay: this.#delay_value,
+        activate: 1,
+        addDepress: "true",
+      });
+
+      // Delete Current Flight Plan
+      this.#codesPayload.push({
+        device: this.#device_id,
+        code: this.#kuKeycodes["L6"],
+        delay: this.#delay_value,
+        activate: 1,
+        addDepress: "true",
+      });
+
+      this.#codesPayload.push({
+        device: this.#device_id,
+        code: this.#kuKeycodes["R1"],
+        delay: this.#delay_value,
+        activate: 1,
+        addDepress: "true",
+      });
+
+      // Enter Waypoints into Flight Plan
+      for (let i = 0; i < waypoints.length; i++) {
+        const waypoint = waypoints[i];
+
+
+        // Press / key for Waypoint name
+        this.#codesPayload.push({
+          device: this.#device_id,
+          code: this.#kuKeycodes["/"],
+          delay: this.#delay_value,
+          activate: 1,
+          addDepress: "true",
+        });
+
+        // Enter waypoint name
+        const match = waypoint.name.match(/^Waypoint (\d+)$/);
+        if (match) {
+          waypoint.name = match[1];
+        }
+        for (let i = 0; i < Math.min(waypoint.name.length, 9); i++) {
+          this.#addKeyboardCode(waypoint.name.charAt(i));
+        }
+
+          this.#codesPayload.push({
+            device: this.#device_id,
+            code: this.#kuKeycodes["DOWN"],
+            delay: this.#delay100,
+            activate: 1,
+            addDepress: "true",
+            });
+          this.#codesPayload.push({
+            device: this.#device_id,
+            code: this.#kuKeycodes["L5"], // Press L5 on subsequent cycles
+            delay: this.#delay_value,
+            activate: 1,
+            addDepress: "true",
+            });
+          }
+    
+        
+    // Add to Existing Alternate Flight Plan actions
+    
+    } else if (this.slotVariant === "ch47ALTADD") {
+      
+      // Enter ALTN FPLN mode
+      this.#codesPayload.push({
+        device: this.#device_id,
+        code: this.#kuKeycodes["IDX"],
+        delay: this.#delay_value,
+        activate: 1,
+        addDepress: "true",
+      });
+
+      // Enter ALTN FPLN mode
+      this.#codesPayload.push({
+        device: this.#device_id,
+        code: this.#kuKeycodes["L4"],
+        delay: this.#delay_value,
+        activate: 1,
+        addDepress: "true",
+      });
+
+      // Press Down arrow a lot to get to end of any current flight plan
+      for (let k = 0; k < 30; k++) {
+        this.#codesPayload.push({
+          device: this.#device_id,
+          code: this.#kuKeycodes["DOWN"],
+          delay: this.#delay100,
+          activate: 1,
+          addDepress: "false",
+          });
+          this.#codesPayload.push({
+            device: this.#device_id,
+            code: this.#kuKeycodes["DOWN"],
+            delay: this.#delay100,
+            activate: 0,
+            addDepress: "false",
+          });
+        }
+
+        //Enter Waypoints to end of current Flight Plan
+        for (let i = 0; i < waypoints.length; i++) {
+        const waypoint = waypoints[i];
+
+        this.#codesPayload.push({
+          device: this.#device_id,
+          code: this.#kuKeycodes["CLR"],
+          delay: this.#delay_value,
+          activate: 1,
+          addDepress: "true",
+        });
+
+        this.#codesPayload.push({
+          device: this.#device_id,
+          code: this.#kuKeycodes["/"],
+          delay: this.#delay_value,
+          activate: 1,
+          addDepress: "true",
+        });
+
+        // Handle the waypoint name and entry logic
+        const match = waypoint.name.match(/^Waypoint (\d+)$/);
+        if (match) {
+          waypoint.name = match[1];
+        }
+        for (let i = 0; i < Math.min(waypoint.name.length, 9); i++) {
+          this.#addKeyboardCode(waypoint.name.charAt(i));
+        }
+
+        //Press Down arrow to advance down Flight Plan List
+        this.#codesPayload.push({
+          device: this.#device_id,
+          code: this.#kuKeycodes["DOWN"],
+          delay: this.#delay_value,
+          activate: 1,
+          addDepress: "true",
+        });
+        
+        // Press LSK L5 to enter Waypoint into Flight Plan
+        this.#codesPayload.push({
+          device: this.#device_id,
+          code: this.#kuKeycodes["L5"],
+          delay: this.#delay_value,
+          activate: 1,
+          addDepress: "true",
+        });
+      }
+    }
+
     return this.#codesPayload; // Return the generated payload
   }
 }

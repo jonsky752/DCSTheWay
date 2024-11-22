@@ -174,7 +174,42 @@ const askUserAboutSeat = async (module, userPreferences) => {
   
      //////////////////////////////////////////////////////////////////////   CH-47F   \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
   
+    } else if (module === "CH-47Fbl1") {
+      if (moduleSpecificPreferences?.includes("Add to FLPN")) {
+        return "ch47ADD";
+      } else if (moduleSpecificPreferences?.includes("Make New FPLN")) {
+        return "ch47NEW";
+      } else if (moduleSpecificPreferences?.includes("Add to ALT FLPN")) {
+        return "ch47ALTADD";
+      } else if (moduleSpecificPreferences?.includes("Make New FLPN")) {
+        return "ch47ALTNEW";
+      } else {
+        return FourOptionsSimpleDialog({
+          title: "Would you like to?",
+          op1: "Add to FLPN",
+          op2: "Make New FLPN",
+          op3: "Add to ALT FLPN",
+          op4: "Make New ALT FLPN",
+        }).then((option) => {
+          switch (option) {
+            case "Add to FLPN":
+              return "ch47ADD";
+            case "Make New FLPN":
+              return "ch47NEW";
+            case "Add to ALT FLPN":
+              return "ch47ALTADD";
+            case "Make New ALT FLPN":
+              return "ch47ALTNEW";
+            default:
+              throw new Error("Invalid option selected");
+          }
+        });
+      }
   
+  
+
+
+  /*
   } else if (module === "CH-47Fbl1") {
     if (moduleSpecificPreferences?.includes("Add to FLPN"))
       return "ch47ADD";
@@ -189,7 +224,7 @@ const askUserAboutSeat = async (module, userPreferences) => {
         option === "Add to FPLN" ? "ch47ADD" : "ch47NEW",
       );
     }
-  
+  */
   
    //////////////////////////////////////////////////////////////////////   A-10C/2   \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
