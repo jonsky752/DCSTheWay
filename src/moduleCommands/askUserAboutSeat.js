@@ -77,68 +77,59 @@ const askUserAboutSeat = async (module, userPreferences) => {
 
   
        //////////////////////////////////////////////////////////////////////   F-15E   \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+      } else if (module === "F-15ESE") {
+        let seat;
+        if (moduleSpecificPreferences?.includes("Pilot")) seat = "Pilot";
+        else if (moduleSpecificPreferences?.includes("WSO")) seat = "WSO";
+        else {
+          await TwoOptionsDialog({
+            title: "What seat are you in?",
+            op1: "Pilot",
+            op2: "WSO",
+          }).then((chosenSeat) => (seat = chosenSeat));
+        }
     
-
-  } else if (module === "F-15ESE") {
-    let seat;
-    if (moduleSpecificPreferences?.includes("Pilot")) seat = "Pilot";
-    else if (moduleSpecificPreferences?.includes("WSO")) seat = "WSO";
-    else {
-      await TwoOptionsDialog({
-        title: "What seat are you in?",
-        op1: "Pilot",
-        op2: "WSO",
-      }).then((chosenSeat) => (seat = chosenSeat));
-    }
-    let route;
-    if (moduleSpecificPreferences?.includes("A{1/A}")) route = "A{1/A}";
-    else if (moduleSpecificPreferences?.includes("B{1/B}")) route = "B{1/B}";
-    else {
-      await TwoOptionsDialog({
-        title: "What route are you using?",
-        op1: "A{1/A}", // op1: "A"
-        op2: "B{1/B} (JDAM)", // op2: "B" // removed because its a nice touch to keep the explicitness of this here, instead of making it more inline.
-      }).then((chosenRoute) => (route = chosenRoute));
-    }
-    let jdam;
-    await TwoOptionsSimpleDialog({
-      title: "Input for JDAMs?",
-      op1: "YES",
-      op2: "NO",
-    }).then((forJDAM) => (jdam = forJDAM));
-
-    let hide = false;
-    if (moduleSpecificPreferences?.includes("Hide")) {
-      hide = true;
-    }
-    if (hide === false) {
-      if (seat === "Pilot" && jdam === "YES") {
-        await AlertDialog({
-          title: "Make sure:",
-          content:
-            "1. You are using 'Route A'.\n" +
-            "2. Your RIGHT MPD is on Smart Weapons page.\n" +
-            "3. Used 'NXT STA' to select the bomb you want to start with.\n" +
-            " 4. Do not program the JDAMs in PACS.(Recommended)",
-        });
-      } else if (seat === "WSO" && jdam === "YES") {
-        await AlertDialog({
-          title: "Make sure:",
-          content:
-            "1. The airplane's master mode is A/G\n" +
-            "2. Your RIGHT MPD(Green display) is on Smart Weapons page.\n" +
-            "3. Used 'NXT STA' to select the bomb you want to start with.\n" +
-            "4. Do not program the JDAMs in PACS.(Recommend)",
-        });
-      }
-    }
-
-    return `F-15ESE_${seat.toLowerCase()}${route === "A{1/A}" ? "A" : "B"}${
-      jdam === "YES" ? "JDAM" : "NOJDAM"
-    }`;
-  
-  
-   //////////////////////////////////////////////////////////////////////   UH-60L   \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+        let jdam;
+        await TwoOptionsSimpleDialog({
+          title: "Input for JDAMs?",
+          op1: "YES",
+          op2: "NO",
+        }).then((forJDAM) => (jdam = forJDAM));
+    
+        let route = jdam === "YES" ? "B{1/B}" : "A{1/A}";
+    
+        let hide = false;
+        if (moduleSpecificPreferences?.includes("Hide")) {
+          hide = true;
+        }
+        if (hide === false) {
+          if (seat === "Pilot" && jdam === "YES") {
+            await AlertDialog({
+              title: "Make sure:",
+              content:
+                "1. Your RIGHT MPD is on Smart Weapons page.\n" +
+                "2. Used 'NXT STA' to select the bomb you want to start with.\n" +
+                "3. Do not program the JDAMs in PACS.(Recommended)",
+            });
+          } else if (seat === "WSO" && jdam === "YES") {
+            await AlertDialog({
+              title: "Make sure:",
+              content:
+                "1. The airplane's master mode is A/G\n" +
+                "2. Your RIGHT MPD(Green display) is on Smart Weapons page.\n" +
+                "3. Used 'NXT STA' to select the bomb you want to start with.\n" +
+                "4. Do not program the JDAMs in PACS.(Recommend)",
+            });
+          }
+        }
+    
+        return `F-15ESE_${seat.toLowerCase()}${route === "A{1/A}" ? "A" : "B"}${
+          jdam === "YES" ? "JDAM" : "NOJDAM"
+        }`;
+    
+    
+   //////////////////////////////////////////////////////////////////////   UH-60L + Hercules Mods   \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
   
   } else if (module === "UH-60L") {
@@ -236,6 +227,25 @@ const askUserAboutSeat = async (module, userPreferences) => {
           option === "Targetpoints" ? "AV8BNA_TRGPT" : "AV8BNA_WPT",
       );
     }
+
+    //////////////////////////////////////////////////////////////////////   Ka-50   \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+  } else if (module === "Ka-50" || module === "Ka-50_3") {
+    if (moduleSpecificPreferences?.includes("Waypoints"))
+      return "ka50WPT";
+    else if (moduleSpecificPreferences?.includes("Targetpoints"))
+      return "ka50TGT";
+    else {
+      return TwoOptionsDialog({
+        title: "Enter as?",
+        op1: "Waypoints",
+        op2: "Targetpoints",
+      }).then((option) =>
+        option === "Targetpoints" ? "ka50TGT" : "ka50WPT"
+      );
+    }
+
+
   } else return module;
 };
 

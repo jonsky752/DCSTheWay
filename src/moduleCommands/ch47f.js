@@ -111,17 +111,18 @@ class ch47f {
       addDepress: "true",
     });
 
+    // Clear the Scratchpad
+    this.#codesPayload.push({
+      device: this.#device_id,
+      code: this.#kuKeycodes["CLR"],
+      delay: 1000,
+      activate: 1,
+      addDepress: "true",
+    });
+
     // Loop through waypoints
     for (const waypoint of waypoints) {
-      // Clear the Scratchpad
-      this.#codesPayload.push({
-        device: this.#device_id,
-        code: this.#kuKeycodes["CLR"],
-        delay: this.#delay_value,
-        activate: 1,
-        addDepress: "true",
-      });
-
+      
       // Increment ACP - UP ARROW
       this.#codesPayload.push({
         device: this.#device_id,
@@ -278,14 +279,6 @@ class ch47f {
       for (let i = 0; i < waypoints.length; i++) {
         const waypoint = waypoints[i];
 
-        //Clear the Scratch Pad - Prevents any errors
-        this.#codesPayload.push({
-          device: this.#device_id,
-          code: this.#kuKeycodes["CLR"],
-          delay: this.#delay_value,
-          activate: 1,
-          addDepress: "true",
-        });
 
         // Press / key for Waypoint name
         this.#codesPayload.push({
@@ -356,7 +349,14 @@ class ch47f {
           code: this.#kuKeycodes["DOWN"],
           delay: this.#delay100,
           activate: 1,
-          addDepress: "true",
+          addDepress: "false",
+          });
+          this.#codesPayload.push({
+            device: this.#device_id,
+            code: this.#kuKeycodes["DOWN"],
+            delay: this.#delay100,
+            activate: 0,
+            addDepress: "false",
           });
         }
 

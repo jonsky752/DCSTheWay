@@ -69,8 +69,9 @@ export default function getModuleCommands(module, waypoints, buttonExtraDelay) {
       sa342.extraDelay = buttonExtraDelay;
       return sa342.createButtonCommands(waypoints);
     }
-    case "Ka-50":
-    case "Ka-50_3": {
+    case "ka50WPT":
+    case "ka50TGT":{
+      ka50.slotVariant = module;
       ka50.extraDelay = buttonExtraDelay;
       return ka50.createButtonCommands(waypoints);
     }

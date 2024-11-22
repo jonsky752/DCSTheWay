@@ -83,7 +83,7 @@ class f15e {
       jdam = false;
     }
 
-    // Doesnt need to be Splice-Cleared because payload is created *each time* the function is called, and isn't static.
+    // Enter correct UFC mode and set Base point B
     let payload = [
       {
         // Clear UFC button
@@ -201,7 +201,7 @@ class f15e {
           {
             // route letter
             device: f15eUFCDevice,
-            code: route,
+            code: this.#f15eNumberCodes["B"],
             delay: this.delay,
             activate: 1,
             addDepress: "true",
@@ -380,6 +380,8 @@ class f15e {
       addDepress: "true",
     });
 
+    // ==================== For JDAM Entry ============================
+
     if (jdam === true) {
       for (const waypoint of waypoints) {
         let waypointNumber = waypoints.indexOf(waypoint) + 1;
@@ -412,9 +414,9 @@ class f15e {
               addDepress: "true",
             },
             {
-              // enter route letter
+              // enter route letter B
               device: f15eUFCDevice,
-              code: route,
+              code: this.#f15eNumberCodes["B"],
               delay: this.delay,
               activate: 1,
               addDepress: "true",
@@ -431,6 +433,51 @@ class f15e {
           this.pushJDAMOps(payload, f15eMPDRight);
         }
       }
+      payload.push(
+        {
+          // Enter 1 button (This re-selects the first waypoint)
+          device: f15eUFCDevice,
+          code: this.#f15eNumberCodes[1],
+          delay: this.delay,
+          activate: 1,
+          addDepress: "true",
+        },
+        {
+          // press .
+          device: f15eUFCDevice,
+          code: this.#f15eNumberCodes["dot"],
+          delay: this.delay,
+          activate: 1,
+          addDepress: "true",
+        },
+        {
+          // press shift
+          device: f15eUFCDevice,
+          code: 3033,
+          delay: this.delay,
+          activate: 1,
+          addDepress: "true",
+        },
+        {
+          // route letter
+          device: f15eUFCDevice,
+          code: this.#f15eNumberCodes["B"],
+          delay: this.delay,
+          activate: 1,
+          addDepress: "true",
+        },
+        {
+          // Waypoint UFC button
+          device: f15eUFCDevice,
+          code: 3010,
+          delay: this.delay,
+          activate: 1,
+          addDepress: "true",
+        },
+      );
+
+// ==================== Waypoint Entry ==========================
+
     } else {
       payload.push(
         {
