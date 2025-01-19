@@ -35,8 +35,10 @@ class f16 {
     for (const waypoint of waypoints) {
       this.#codesPayload.push(
         createButtonPress(17, 3030, this.#delay150),
-        createButtonPress(17, 3035, this.#delay150, -1),
-        createButtonPress(17, 3035, this.#delay150, -1),
+        createButtonPress(17, 3034, this.#delay150),
+        createButtonPress(17, 3034, this.#delay150),
+        createButtonPress(17, 3034, this.#delay150),
+        createButtonPress(17, 3034, this.#delay150),
       );
       //Type hem
       if (waypoint.latHem === "N") {
@@ -82,10 +84,8 @@ class f16 {
       this.#codesPayload.push(createButtonPress(17, 3016, this.#delay10));
       //back to steerpoint field
       this.#codesPayload.push(
-        createButtonPress(17, 3034, this.#delay150),
-        createButtonPress(17, 3034, this.#delay150),
-        createButtonPress(17, 3034, this.#delay150),
-        createButtonPress(17, 3034, this.#delay150),
+        createButtonPress(17, 3035, this.#delay150, -1),
+        createButtonPress(17, 3035, this.#delay150, -1),
       );
     }
 
