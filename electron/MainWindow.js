@@ -8,7 +8,7 @@ class MainWindow extends BrowserWindow {
       show: false,
       width: 300,
       height: 500,
-      x: 0, //0, //3800,
+      x: 0, //3800,
       y: screen.getPrimaryDisplay().workAreaSize.height - 500, //0,
       webPreferences: {
         nodeIntegration: true,
