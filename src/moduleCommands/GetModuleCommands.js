@@ -15,13 +15,17 @@ import sa342 from "./sa342";
 
 export default function getModuleCommands(module, waypoints, buttonExtraDelay) {
   switch (module) {
-    case "F-15ESE_pilotA":
-    case "F-15ESE_wsoA":
-    case "F-15ESE_pilotB":
-    case "F-15ESE_wsoB":
-      f15e.slotVariant = module;
-      f15e.extraDelay = buttonExtraDelay;
-      return f15e.createButtonCommands(waypoints);
+    case "F-15ESE_pilotAJDAM":
+      case "F-15ESE_wsoAJDAM":
+      case "F-15ESE_pilotBJDAM":
+      case "F-15ESE_wsoBJDAM":
+      case "F-15ESE_pilotANOJDAM":
+      case "F-15ESE_wsoANOJDAM":
+      case "F-15ESE_pilotBNOJDAM":
+      case "F-15ESE_wsoBNOJDAM":
+        f15e.slotVariant = module;
+        f15e.extraDelay = buttonExtraDelay;
+        return f15e.createButtonCommands(waypoints);
     case "F-16C_50":
     case "F-16D_50":
     case "F-16D_50_NS":
@@ -34,9 +38,14 @@ export default function getModuleCommands(module, waypoints, buttonExtraDelay) {
       return f16.createButtonCommands(waypoints);
     }
     case "FA-18C_hornet":
+    case "FA-18C_hornetPP1":
+    case "FA-18C_hornetPP2":
+    case "FA-18C_hornetPP3":
+    case "FA-18C_hornetPP4":
     case "FA-18E":
     case "FA-18F":
     case "EA-18G": {
+      fa18.slotVariant = module;
       fa18.extraDelay = buttonExtraDelay;
       return fa18.createButtonCommands(waypoints);
     }
@@ -60,8 +69,9 @@ export default function getModuleCommands(module, waypoints, buttonExtraDelay) {
       sa342.extraDelay = buttonExtraDelay;
       return sa342.createButtonCommands(waypoints);
     }
-    case "Ka-50":
-    case "Ka-50_3": {
+    case "ka50WPT":
+    case "ka50TGT":{
+      ka50.slotVariant = module;
       ka50.extraDelay = buttonExtraDelay;
       return ka50.createButtonCommands(waypoints);
     }
@@ -94,7 +104,9 @@ export default function getModuleCommands(module, waypoints, buttonExtraDelay) {
       return av8b.createButtonCommands(waypoints);
     }
     case "ch47ADD":
-    case "ch47NEW": {
+    case "ch47NEW":
+    case "ch47ALTADD":
+    case "ch47ALTNEW": {
       ch47f.slotVariant = module;
       ch47f.extraDelay = buttonExtraDelay;
       return ch47f.createButtonCommands(waypoints);
