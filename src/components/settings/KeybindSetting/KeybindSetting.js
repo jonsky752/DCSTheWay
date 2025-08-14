@@ -38,6 +38,26 @@ const KeybindSetting = ({ settingChangeHandler }) => {
         preferenceKey={"transferKeybind"}
         changeKeybindHandler={settingChangeHandler}
       />
+      <KeybindItem
+        name={"Option 1"}
+        preferenceKey={"option1Keybind"}
+        changeKeybindHandler={settingChangeHandler}
+      />
+      <KeybindItem
+        name={"Option 2"}
+        preferenceKey={"option2Keybind"}
+        changeKeybindHandler={settingChangeHandler}
+      />
+      <KeybindItem
+        name={"Option 3"}
+        preferenceKey={"option3Keybind"}
+        changeKeybindHandler={settingChangeHandler}
+      />
+      <KeybindItem
+        name={"Option 4"}
+        preferenceKey={"option4Keybind"}
+        changeKeybindHandler={settingChangeHandler}
+      />
     </Stack>
   );
 };

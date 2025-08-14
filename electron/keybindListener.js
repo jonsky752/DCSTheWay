@@ -7,6 +7,10 @@ const setupKeybinds = (mainWindow, preferences) => {
     deleteLastKeybind: preferences["deleteLastKeybind"],
     deleteAllKeybind: preferences["deleteAllKeybind"],
     transferKeybind: preferences["transferKeybind"],
+    option1Keybind: preferences["option1Keybind"],
+    option2Keybind: preferences["option2Keybind"],
+    option3Keybind: preferences["option3Keybind"],
+    option4Keybind: preferences["option4Keybind"],
   };
   for (const [keybindName, keybindValue] of Object.entries(allKeybinds)) {
     if (!keybindValue || keybindValue === "None") continue;
@@ -40,6 +44,18 @@ const setupKeybinds = (mainWindow, preferences) => {
             mainWindow.webContents.send("deleteWaypoints");
             break;
           case "transferKeybind":
+            mainWindow.webContents.send("transferWaypoints");
+            break;
+          case "option1Keybind":
+            mainWindow.webContents.send("transferWaypoints");
+            break;
+          case "option2Keybind":
+            mainWindow.webContents.send("transferWaypoints");
+            break;
+          case "option3Keybind":
+            mainWindow.webContents.send("transferWaypoints");
+            break;
+          case "option4Keybind":
             mainWindow.webContents.send("transferWaypoints");
             break;
         }
