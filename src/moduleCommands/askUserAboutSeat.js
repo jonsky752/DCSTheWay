@@ -206,25 +206,22 @@ const askUserAboutSeat = async (module, userPreferences) => {
         });
       }
   
-  
+//////////////////////////////////////////////////////////////////////   C130J  \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
-
-  /*
-  } else if (module === "CH-47Fbl1") {
-    if (moduleSpecificPreferences?.includes("Add to FLPN"))
-      return "ch47ADD";
-    else if (moduleSpecificPreferences?.includes("Make New FPLN"))
-      return "ch47NEW";
+   } else if (module === "C-130J-30") {
+    if (moduleSpecificPreferences?.includes("Left Seat"))
+      return "c130Plt";
+    else if (moduleSpecificPreferences?.includes("Right Seat"))
+      return "c130CoPlt";
     else {
       return TwoOptionsDialog({
-        title: "Would you like to?",
-        op1: "Add to FPLN",
-        op2: "Make New FPLN",
+        title: "What seat are you in?",
+        op1: "Left Seat",
+        op2: "Right Seat",
       }).then((option) =>
-        option === "Add to FPLN" ? "ch47ADD" : "ch47NEW",
+        option === "Left Seat" ? "c130Plt" : "c130CoPlt",
       );
     }
-  */
   
    //////////////////////////////////////////////////////////////////////   A-10C/2   \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 

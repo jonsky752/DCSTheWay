@@ -12,6 +12,7 @@ import hercules from "./Hercules";
 import oh58d from "./oh58d";
 import ch47f from "./ch47f";
 import sa342 from "./sa342";
+import c130j from "./c130j";
 
 export default function getModuleCommands(module, waypoints, buttonExtraDelay) {
   switch (module) {
@@ -116,6 +117,12 @@ export default function getModuleCommands(module, waypoints, buttonExtraDelay) {
       a10.slotVariant = module;
       a10.extraDelay = buttonExtraDelay;
       return a10.createButtonCommands(waypoints);
+    }
+    case "c130Plt":
+    case "c130CoPlt":{
+      c130j.slotVariant = module;
+      c130j.extraDelay = buttonExtraDelay;
+      return c130j.createButtonCommands(waypoints);
     }
 
     default:
