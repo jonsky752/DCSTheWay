@@ -22,6 +22,7 @@ Supported modules:
 * Hercules (Requires patch available at https://github.com/Summit60/DCS-Hercules-TheWay-patch)
 * CH-47F Chinook
 * SA342 Gazelle
+* C-130J-30 Hercules (ASC)
  
 Multiplayer is supported as long as the server has Player Exports turned on (most servers do).
 
@@ -80,3 +81,4 @@ The application is built using React.js and Electron. If you'd like to contribut
 If you'd like to build/package the code for production, run `npm run package` and check the `dist` folder for the created installer. 
 
 This is the way.
+
