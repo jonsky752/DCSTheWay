@@ -8,8 +8,13 @@ class MainWindow extends BrowserWindow {
       show: false,
       width: 300,
       height: 500,
+<<<<<<< Updated upstream
       x: 3800, //0,
       y: 0, //screen.getPrimaryDisplay().workAreaSize.height - 500,
+=======
+      x: 0,
+      y: screen.getPrimaryDisplay().workAreaSize.height - 500, //0,
+>>>>>>> Stashed changes
       webPreferences: {
         nodeIntegration: true,
         contextIsolation: false,

@@ -1,6 +1,10 @@
 {
   "name": "theway",
+<<<<<<< Updated upstream
   "version": "2.5.9",
+=======
+  "version": "2.5.15",
+>>>>>>> Stashed changes
   "private": true,
   "main": "electron/electron.js",
   "dependencies": {

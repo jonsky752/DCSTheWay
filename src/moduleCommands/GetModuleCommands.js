@@ -15,14 +15,12 @@ import sa342 from "./sa342";
 
 export default function getModuleCommands(module, waypoints, buttonExtraDelay) {
   switch (module) {
-    case "F-15ESE_pilotAJDAM":
-      case "F-15ESE_wsoAJDAM":
-      case "F-15ESE_pilotBJDAM":
-      case "F-15ESE_wsoBJDAM":
-      case "F-15ESE_pilotANOJDAM":
-      case "F-15ESE_wsoANOJDAM":
-      case "F-15ESE_pilotBNOJDAM":
-      case "F-15ESE_wsoBNOJDAM":
+    case "F-15ESE_pilot_waypoints":
+      case "F-15ESE_pilot_targetpoints":
+      case "F-15ESE_pilot_txfr":
+      case "F-15ESE_wso_waypoints":
+      case "F-15ESE_wso_targetpoints":
+      case "F-15ESE_wso_txfr":
         f15e.slotVariant = module;
         f15e.extraDelay = buttonExtraDelay;
         return f15e.createButtonCommands(waypoints);
