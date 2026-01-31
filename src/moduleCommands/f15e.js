@@ -1,520 +1,263 @@
 class f15e {
   static slotVariant = "";
-  static delay = 100;
+  static delay = 50;
   static #f15eNumberCodes = {
-    0: 3036,
-    1: 3020,
-    2: 3021,
-    3: 3022,
-    4: 3025,
-    5: 3026,
-    6: 3027,
+    0: 3036, 
+    1: 3020, 
+    2: 3021, 
+    3: 3022, 
+    4: 3025, 
+    5: 3026, 
+    6: 3027, 
     7: 3030,
-    8: 3031,
+    8: 3031, 
     9: 3032,
-    menu: 3038,
-    clear: 3035,
-    shift: 3033,
-    A: 3020,
-    B: 3022,
-    dot: 3029,
-    PB1: 3061,
-    PB2: 3062,
-    AG: 3127,
+    L1: 3001,
+    L2: 3002,
+    L3: 3003,
+    R1: 3010,
+    R4: 3007,
+    menu: 3038, 
+    clear: 3035, 
+    shift: 3033, 
+    A: 3020, 
+    B: 3022, 
+    dot: 3029, 
+    PB1: 3061, 
+    PB2: 3062, 
+    AG: 3127
   };
 
-  static pushJDAMOps(payload, MPDcode) {
-    payload.push({
-      device: MPDcode,
-      code: this.#f15eNumberCodes["PB1"],
-      delay: 2000,
-      activate: 1,
-      addDepress: "true",
-    });
-    payload.push({
-      device: MPDcode,
-      code: this.#f15eNumberCodes["PB2"],
-      delay: this.delay,
-      activate: 1,
-      addDepress: "true",
-    });
-  }
+  static #codesPayload = [];
 
   static createButtonCommands(waypoints) {
-    let f15eUFCDevice;
-    let f15eACC = 32;
-    let f15eMPDRight;
-    let frontSeat = false;
-    if (
-      [
-        "F-15ESE_pilotAJDAM",
-        "F-15ESE_pilotBJDAM",
-        "F-15ESE_pilotANOJDAM",
-        "F-15ESE_pilotBNOJDAM",
-      ].includes(this.slotVariant)
-    ) {
-      f15eUFCDevice = 56;
-      f15eMPDRight = 36;
-      frontSeat = true;
-    } else {
-      f15eUFCDevice = 57;
-      f15eMPDRight = 39;
-    }
-    let route; // This should reduce length of code by a lot, and make it more readable.
-    if (
-      this.slotVariant === "F-15ESE_pilotAJDAM" ||
-      this.slotVariant === "F-15ESE_wsoAJDAM" ||
-      this.slotVariant === "F-15ESE_pilotANOJDAM" ||
-      this.slotVariant === "F-15ESE_wsoANOJDAM"
-    ) {
-      route = this.#f15eNumberCodes["A"];
-    } else {
-      route = this.#f15eNumberCodes["B"];
-    }
-    let jdam;
-    if (
-      this.slotVariant === "F-15ESE_pilotAJDAM" ||
-      this.slotVariant === "F-15ESE_wsoAJDAM" ||
-      this.slotVariant === "F-15ESE_pilotBJDAM" ||
-      this.slotVariant === "F-15ESE_wsoBJDAM"
-    ) {
-      jdam = true;
-    } else {
-      jdam = false;
-    }
+    // Clear previous payload
+    this.#codesPayload = [];
 
-    // Enter correct UFC mode and set Base point B
-    let payload = [
-      {
-        // Clear UFC button
-        device: f15eUFCDevice,
-        code: 3035,
-        delay: this.delay,
-        activate: 1,
-        addDepress: "true",
-      },
-      {
-        // Clear UFC button
-        device: f15eUFCDevice,
-        code: 3035,
-        delay: this.delay,
-        activate: 1,
-        addDepress: "true",
-      },
-      {
-        // Clear UFC button
-        device: f15eUFCDevice,
-        code: 3035,
-        delay: this.delay,
-        activate: 1,
-        addDepress: "true",
-      },
-      {
-        // Menu UFC button
-        device: f15eUFCDevice,
-        code: 3038,
-        delay: this.delay,
-        activate: 1,
-        addDepress: "true",
-      },
-      {
-        // Press Shift
-        device: f15eUFCDevice,
-        code: 3033,
-        delay: this.delay,
-        activate: 1,
-        addDepress: "true",
-      },
-      {
-        // Press B / 3 (This switches to the universal Base point / INS Align point)
-        device: f15eUFCDevice,
-        code: this.#f15eNumberCodes["B"],
-        delay: this.delay,
-        activate: 1,
-        addDepress: "true",
-      },
-      {
-        // Enter B into UFC button 10
-        device: f15eUFCDevice,
-        code: 3010,
-        delay: this.delay,
-        activate: 1,
-        addDepress: "true",
-      },
-      {
-        // Press UFC button 10
-        device: f15eUFCDevice,
-        code: 3010,
-        delay: this.delay,
-        activate: 1,
-        addDepress: "true",
-      },
-    ];
-    // =================== end of setup ===================
+    /*////////////////////////////////////////////////////////
+===================== F-15ESE SLOT LOGIC =====================
+////////////////////////////////////////////////////////*/
 
-    // =================== Set Master Mode ===================
-    if (jdam === true && frontSeat === true) {
-      payload.push({
-        // AG Switch
-        device: f15eACC,
-        code: this.#f15eNumberCodes["AG"],
-        delay: this.delay,
-        activate: 1,
-        addDepress: "true",
-      });
-    }
-    // =================== end of master mode setup ===================
+// Determine seat once
+const isPilot = this.slotVariant.includes("_pilot_");
 
-    // =================== Enter Waypoint numbers ===================
-    for (const waypoint of waypoints) {
-      let waypointNumber = waypoints.indexOf(waypoint) + 1;
-      for (let i = 0; i < (waypointNumber + "").length; i++) {
-        // eslint-disable-next-line default-case
-        let digit = (waypointNumber + "").charAt(i);
-        payload.push({
-          // Waypoint Digit
-          device: f15eUFCDevice,
-          code: this.#f15eNumberCodes[digit],
-          delay: this.delay,
-          activate: 1,
-          addDepress: "true",
-        });
-      }
-      if (jdam === true) {
-        payload.push(
-          {
-            // press .
-            device: f15eUFCDevice,
-            code: this.#f15eNumberCodes["dot"],
-            delay: this.delay,
-            activate: 1,
-            addDepress: "true",
-          },
-          {
-            // press shift
-            device: f15eUFCDevice,
-            code: this.#f15eNumberCodes["shift"],
-            delay: this.delay,
-            activate: 1,
-            addDepress: "true",
-          },
-          {
-            // route letter
-            device: f15eUFCDevice,
-            code: this.#f15eNumberCodes["B"],
-            delay: this.delay,
-            activate: 1,
-            addDepress: "true",
-          },
-        );
-      } else {
-        payload.push(
-          {
-            // press shift
-            device: f15eUFCDevice,
-            code: this.#f15eNumberCodes["shift"],
-            delay: this.delay,
-            activate: 1,
-            addDepress: "true",
-          },
-          {
-            // route letter
-            device: f15eUFCDevice,
-            code: route,
-            delay: this.delay,
-            activate: 1,
-            addDepress: "true",
-          },
-        );
-      }
+const f15eUFCDevice = isPilot ? 56 : 57;
+const f15eMPDDevice = isPilot ? 36 : 39;
+const f15eACCDevice = isPilot ? 32 : null; // WSO may not use ACC
 
-      // ============================================================
 
-      payload.push({
-        // Press PB 1
-        device: f15eUFCDevice,
-        code: 3001,
-        delay: this.delay,
-        activate: 1,
-        addDepress: "true",
-      });
 
-      payload.push({
-        // Press Shift
-        device: f15eUFCDevice,
-        code: this.#f15eNumberCodes["shift"],
-        delay: this.delay,
-        activate: 1,
-        addDepress: "true",
-      });
+/*///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+===================== WAYPOINTS ============================================================================================================
+////////////////////////////////////////////////////////*////////////////////////////////////////////////////////////////////////////////////
+if (this.slotVariant.includes("_waypoints")) {
 
-      if (waypoint.latHem === "N") {
-        // North
-        payload.push({
-          device: f15eUFCDevice,
-          code: this.#f15eNumberCodes[2],
-          delay: this.delay,
-          activate: 1,
-          addDepress: "true",
-        });
-      } else {
-        payload.push({
-          // South
-          device: f15eUFCDevice,
-          code: this.#f15eNumberCodes[8],
-          delay: this.delay,
-          activate: 1,
-          addDepress: "true",
-        });
-      }
+      // Clear the scratchpad and menu ///////////////////
+      this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.clear, delay: this.delay, activate: 1, addDepress: "true"});
+      this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.clear, delay: this.delay, activate: 1, addDepress: "true"});
+      this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.clear, delay: this.delay, activate: 1, addDepress: "true"});
 
-      //Type lat
-      for (let i = 0; i < waypoint.lat.length; i++) {
-        // enter each digit of lat into scratchpad
-        // eslint-disable-next-line default-case
-        for (const char of waypoint.lat.charAt(i)) {
-          if (char !== ".") {
-            payload.push({
-              device: f15eUFCDevice,
-              code: this.#f15eNumberCodes[char],
-              delay: this.delay,
-              activate: 1,
-              addDepress: "true",
-            });
-          }
-        }
-      }
+      // Enter MENU page ///////////////////////////////
+      this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.menu, delay: this.delay, activate: 1, addDepress: "true"});
 
-      payload.push({
-        // enter latitutde into UFC
-        device: f15eUFCDevice,
-        code: 3002,
-        delay: this.delay,
-        activate: 1,
-        addDepress: "true",
-      });
+      // Enter B into Scratchpad ///////////////////////
+      this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.shift, delay: this.delay, activate: 1, addDepress: "true"});
+      this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.B, delay: this.delay, activate: 1, addDepress: "true"});
 
-      payload.push({
-        // Press Shift
-        device: f15eUFCDevice,
-        code: 3033,
-        delay: this.delay,
-        activate: 1,
-        addDepress: "true",
-      });
+      //Enter B into UFC PB10 to enter BASE mode////////////////////////////
+      this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.R1, delay: this.delay, activate: 1, addDepress: "true"});
 
-      if (waypoint.longHem === "E") {
-        // Type hemisphere into scratchpad
-        payload.push({
-          device: f15eUFCDevice,
-          code: this.#f15eNumberCodes[6],
-          delay: this.delay,
-          activate: 1,
-          addDepress: "true",
-        });
-      } else {
-        payload.push({
-          device: f15eUFCDevice,
-          code: this.#f15eNumberCodes[4],
-          delay: this.delay,
-          activate: 1,
-          addDepress: "true",
-        });
-      }
+      //UFC PB10 For Waypoint menu //////////////////////////
+      this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.R1, delay: this.delay, activate: 1, addDepress: "true"});
 
-      for (let i = 0; i < waypoint.long.length; i++) {
-        // enter each digit of longtitude into scratchpad
-        // eslint-disable-next-line default-case
-        for (const char of waypoint.long.charAt(i)) {
-          if (char !== ".") {
-            payload.push({
-              device: f15eUFCDevice,
-              code: this.#f15eNumberCodes[char],
-              delay: this.delay,
-              activate: 1,
-              addDepress: "true",
-            });
-          }
-        }
-      }
+      // Waypoint loop //////////////////////////////////////
+      for (let i = 0; i < waypoints.length; i++) {
+        const wp = waypoints[i];
+        const wpNum = i + 1;
 
-      payload.push({
-        // enter longtitude into UFC
-        device: f15eUFCDevice,
-        code: 3003,
-        delay: this.delay,
-        activate: 1,
-        addDepress: "true",
-      });
+        // Enter WAYPOINT IDENT Number into scratchpad////////////////////////////
+        for (const digit of ("" + wpNum)) {
+          this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes[digit], delay: this.delay, activate: 1, addDepress: "true" });}
 
-      for (let i = 0; i < waypoint.elev.length; i++) {
-        // enter each digit of elevation into scratchpad
-        // eslint-disable-next-line default-case
-        for (const char of waypoint.elev.charAt(i)) {
-          payload.push({
-            device: f15eUFCDevice,
-            code: this.#f15eNumberCodes[char],
-            delay: this.delay,
-            activate: 1,
-            addDepress: "true",
-          });
-        }
-      }
+        // Enter A into scratchpad /////////////////////////////////////////
+        this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.shift, delay: this.delay, activate: 1, addDepress: "true" });
+        this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.A, delay: this.delay, activate: 1, addDepress: "true" });
 
-      payload.push({
-        // enter elevation into UFC
-        device: f15eUFCDevice,
-        code: 3007,
-        delay: this.delay,
-        activate: 1,
-        addDepress: "true",
-      });
+        // PB1 press to set Waypoint menu to currently transferring waypoint ////////////////////////////////////////
+        this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.L1, delay: this.delay, activate: 1, addDepress: "true" });
+
+                
+
+        // LAT N or S /////////////////////////////////////
+        this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.shift, delay: this.delay, activate: 1, addDepress: "true" }); //Press Shift
+	if (wp.latHem === "N") 
+          this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes[2], delay: this.delay, activate: 1, addDepress: "true" }); //Enters N
+        else this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes[8], delay: this.delay, activate: 1, addDepress: "true" }); //Enters S
+
+        //Enter LAT Coordinate DIGITS //////////////////////////////////
+        for (const char of wp.lat) if (char !== ".") this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes[char], delay: this.delay, activate: 1, addDepress: "true" }); //Types all LAT coordinates
+        
+	      //Press LSK L2 to enter Latitude into UFC
+	      this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.L2, delay: this.delay, activate: 1, addDepress: "true" });
+
+        // LON E or W /////////////////////////////////////////
+        this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.shift, delay: this.delay, activate: 1, addDepress: "true" }); // Press Shift
+        if (wp.longHem === "E") this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes[6], delay: this.delay, activate: 1, addDepress: "true" }); //Enters E
+        else this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes[4], delay: this.delay, activate: 1, addDepress: "true" }); //Enters W
+
+        //Enter LAT DIGITS ////////////////////////////////////
+        for (const char of wp.long) if (char !== ".") this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes[char], delay: this.delay, activate: 1, addDepress: "true" }); //Types all LON coordinates
+
+        //Press LSK L3 to enter Longitude into UFC
+	      this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.L3, delay: this.delay, activate: 1, addDepress: "true" });
+
+        //Enter ELEV DIGITS ////////////////////////////////////
+        for (const char of wp.elev) this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes[char], delay: this.delay, activate: 1, addDepress: "true" });
+
+        //Press LSK R4 to enter Elevation into UFC
+	      this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.R4, delay: this.delay, activate: 1, addDepress: "true" });}
+	      //^This is the end of waypoint entry loop
+
+      
+      // BACK TO AND SELECT WP 1
+      this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.menu, delay: this.delay, activate: 1, addDepress: "true" }); // Press UFC Menu button
+      this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes[1], delay: this.delay, activate: 1, addDepress: "true" }); // Press 1 
+      this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.shift, delay: this.delay, activate: 1, addDepress: "true" }); // Press Shift
+      this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.A, delay: this.delay, activate: 1, addDepress: "true" }); // Press A
+      this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.R1, delay: this.delay, activate: 1, addDepress: "true" }); // Press UFC LSK R1
+       
     }
 
-    payload.push({
-      // Menu UFC button
-      device: f15eUFCDevice,
-      code: 3038,
-      delay: this.delay,
-      activate: 1,
-      addDepress: "true",
-    });
 
-    // ==================== For JDAM Entry ============================
 
-    if (jdam === true) {
-      for (const waypoint of waypoints) {
-        let waypointNumber = waypoints.indexOf(waypoint) + 1;
-        for (let i = 0; i < (waypointNumber + "").length; i++) {
-          // eslint-disable-next-line default-case
-          let digit = (waypointNumber + "").charAt(i);
-          payload.push(
-            {
-              // Waypoint Digit
-              device: f15eUFCDevice,
-              code: this.#f15eNumberCodes[digit],
-              delay: this.delay,
-              activate: 1,
-              addDepress: "true",
-            },
-            {
-              // press .
-              device: f15eUFCDevice,
-              code: this.#f15eNumberCodes["dot"],
-              delay: this.delay,
-              activate: 1,
-              addDepress: "true",
-            },
-            {
-              // press shift
-              device: f15eUFCDevice,
-              code: 3033,
-              delay: this.delay,
-              activate: 1,
-              addDepress: "true",
-            },
-            {
-              // enter route letter B
-              device: f15eUFCDevice,
-              code: this.#f15eNumberCodes["B"],
-              delay: this.delay,
-              activate: 1,
-              addDepress: "true",
-            },
-            {
-              // Waypoint UFC button
-              device: f15eUFCDevice,
-              code: 3010,
-              delay: this.delay,
-              activate: 1,
-              addDepress: "true",
-            },
-          );
-          this.pushJDAMOps(payload, f15eMPDRight);
-        }
+
+    /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ===================== TARGET POINTS =============================================================================================================
+    ////////////////////////////////////////////////////////*////////////////////////////////////////////////////////////////////////////////////////
+    if (this.slotVariant.includes("_targetpoints") || this.slotVariant.includes("_txfr")) {
+
+      // Clear and Menu
+      this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.clear, delay: this.delay, activate: 1, addDepress: "true" });
+      this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.clear, delay: this.delay, activate: 1, addDepress: "true" });
+      this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.clear, delay: this.delay, activate: 1, addDepress: "true" });
+      this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.menu, delay: this.delay, activate: 1, addDepress: "true" });
+
+      // A/G Mode
+      this.#codesPayload.push({ device: f15eACCDevice, code: this.#f15eNumberCodes["AG"], delay: this.delay, activate: 1, addDepress: "true", });
+
+      // Basepoint B
+      this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.shift, delay: this.delay, activate: 1, addDepress: "true" });
+      this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.B, delay: this.delay, activate: 1, addDepress: "true" });
+      this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.R1, delay: this.delay, activate: 1, addDepress: "true" });
+
+      // Waypoint Page
+      this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.R1, delay: this.delay, activate: 1, addDepress: "true" });
+
+      // Waypoint IDENT
+      for (let i = 0; i < waypoints.length; i++) {
+        const wp = waypoints[i];
+        const wpNum = i + 1;
+
+        for (const digit of ("" + wpNum)) this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes[digit], delay: this.delay, activate: 1, addDepress: "true" });
+
+        // dot
+        this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.dot, delay: this.delay, activate: 1, addDepress: "true" });
+
+        // Route B
+        this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.shift, delay: this.delay, activate: 1, addDepress: "true" });
+        this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.B, delay: this.delay, activate: 1, addDepress: "true" });
+
+        // PB1 press
+        this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.L1, delay: this.delay, activate: 1, addDepress: "true" });
+
+        // LAT loop
+        this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.shift, delay: this.delay, activate: 1, addDepress: "true" });
+        if (wp.latHem === "N") this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes[2], delay: this.delay, activate: 1, addDepress: "true" });
+        else this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes[8], delay: this.delay, activate: 1, addDepress: "true" });
+
+        for (const char of wp.lat) if (char !== ".") this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes[char], delay: this.delay, activate: 1, addDepress: "true" });
+        this.#codesPayload.push({ device: f15eUFCDevice, code: 3002, delay: this.delay, activate: 1, addDepress: "true" });
+        
+
+        // LON loop
+        this.#codesPayload.push({ device: f15eUFCDevice, code: 3033, delay: this.delay, activate: 1, addDepress: "true" }); 
+        if (wp.longHem === "E") this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes[6], delay: this.delay, activate: 1, addDepress: "true" });
+        else this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes[4], delay: this.delay, activate: 1, addDepress: "true" });
+
+        for (const char of wp.long) if (char !== ".") this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes[char], delay: this.delay, activate: 1, addDepress: "true" });
+        this.#codesPayload.push({ device: f15eUFCDevice, code: 3003, delay: this.delay, activate: 1, addDepress: "true" });
+
+        //ELEV loop
+        for (const char of wp.elev) this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes[char], delay: this.delay, activate: 1, addDepress: "true" });
+        this.#codesPayload.push({ device: f15eUFCDevice, code: 3007, delay: this.delay, activate: 1, addDepress: "true" });
       }
-      payload.push(
-        {
-          // Enter 1 button (This re-selects the first waypoint)
-          device: f15eUFCDevice,
-          code: this.#f15eNumberCodes[1],
-          delay: this.delay,
-          activate: 1,
-          addDepress: "true",
-        },
-        {
-          // press .
-          device: f15eUFCDevice,
-          code: this.#f15eNumberCodes["dot"],
-          delay: this.delay,
-          activate: 1,
-          addDepress: "true",
-        },
-        {
-          // press shift
-          device: f15eUFCDevice,
-          code: 3033,
-          delay: this.delay,
-          activate: 1,
-          addDepress: "true",
-        },
-        {
-          // route letter
-          device: f15eUFCDevice,
-          code: this.#f15eNumberCodes["B"],
-          delay: this.delay,
-          activate: 1,
-          addDepress: "true",
-        },
-        {
-          // Waypoint UFC button
-          device: f15eUFCDevice,
-          code: 3010,
-          delay: this.delay,
-          activate: 1,
-          addDepress: "true",
-        },
-      );
-
-// ==================== Waypoint Entry ==========================
-
-    } else {
-      payload.push(
-        {
-          // Enter 1 button (This re-selects the first waypoint)
-          device: f15eUFCDevice,
-          code: this.#f15eNumberCodes[1],
-          delay: this.delay,
-          activate: 1,
-          addDepress: "true",
-        },
-        {
-          // press shift
-          device: f15eUFCDevice,
-          code: 3033,
-          delay: this.delay,
-          activate: 1,
-          addDepress: "true",
-        },
-        {
-          // enter route letter
-          device: f15eUFCDevice,
-          code: route,
-          delay: this.delay,
-          activate: 1,
-          addDepress: "true",
-        },
-        {
-          // Waypoint UFC button
-          device: f15eUFCDevice,
-          code: 3010,
-          delay: this.delay,
-          activate: 1,
-          addDepress: "true",
-        },
-      );
+      // BACK TO AND SELECT TP 1
+      this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.menu, delay: this.delay, activate: 1, addDepress: "true" });
+      this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes[1], delay: this.delay, activate: 1, addDepress: "true" });
+      this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.dot, delay: this.delay, activate: 1, addDepress: "true" });
+      this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.shift, delay: this.delay, activate: 1, addDepress: "true" });
+      this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.B, delay: this.delay, activate: 1, addDepress: "true" });
+      this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.R1, delay: this.delay, activate: 1, addDepress: "true" });
     }
-    return payload;
+
+
+
+    
+
+/*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+===================== TRANSFER TO WEAPONS =========================================================================================================
+////////////////////////////////////////////////////////*///////////////////////////////////////////////////////////////////////////////////////////
+if (this.slotVariant.includes("_txfr")) {
+
+  
+
+  const numWaypoints = waypoints.length;
+
+
+  //This blocks sets a specific number of weapon station jumps if 8 or 9 jdams are loaded  
+  function getPB2PressCount(numWaypoints, waypointNumber) {
+  const lookup = {
+    8: [3, 7, 3, 4, 3, 3, 7, 2],      // index 0 → WP1
+    9: [4, 8, 8, 4, 4, 4, 3, 8, 2]    // index 0 → WP1
+  };
+  if (lookup[numWaypoints]) {
+    return lookup[numWaypoints][waypointNumber - 1] ?? 1;
+  }
+  return 1;} // End of block
+
+this.#codesPayload.push({ device: f15eACCDevice, code: this.#f15eNumberCodes.AG, delay: this.delay, activate: 1, addDepress: "true" }); // Enters A/G mode
+
+  for (let i = 0; i < numWaypoints; i++) {
+
+    const wpNum = i + 1;
+
+    // IDENT only (e.g. 1.B)
+    for (const digit of String(wpNum)) { this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes[digit], delay: this.delay, activate: 1, addDepress: "true", });} //Enters number
+    this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.dot, delay: this.delay, activate: 1, addDepress: "true" }); // Enters dot
+    this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.shift, delay: this.delay, activate: 1, addDepress: "true" }); //Presses Shift
+    this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.B, delay: this.delay, activate: 1, addDepress: "true" }); // Makes a B
+    this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.R1, delay: this.delay, activate: 1, addDepress: "true" }); // Enter it to LSK R1
+
+    // MPD PB1 — transfer to bomb - has a delay to allow for coordinate transfer
+    this.#codesPayload.push({ device: f15eMPDDevice, code: this.#f15eNumberCodes.PB1, delay: 2000, activate: 1, addDepress: "true", });
+
+    // PB2 — This does the actual pushing of MPD PB2
+    const presses =
+      (numWaypoints === 8 || numWaypoints === 9)
+        ? getPB2PressCount(numWaypoints, wpNum)
+        : 1;
+    for (let j = 0; j < presses; j++) {
+      this.#codesPayload.push({ device: f15eMPDDevice, code: this.#f15eNumberCodes.PB2, delay: this.delay, activate: 1, addDepress: "true",}); }
+  }
+
+  this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes[1], delay: this.delay, activate: 1, addDepress: "true" });
+  this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.dot, delay: this.delay, activate: 1, addDepress: "true" });
+  this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.shift, delay: this.delay, activate: 1, addDepress: "true" });
+  this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.B, delay: this.delay, activate: 1, addDepress: "true" });
+  this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.R1, delay: this.delay, activate: 1, addDepress: "true" });
+}
+
+     return this.#codesPayload;
   }
 }
 
