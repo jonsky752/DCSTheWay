@@ -8,20 +8,22 @@ You can also share those waypoints with your friends, and you will all fly the s
 
 ## What is supported?
 Supported modules:
+* A-10C and A-10C2
+* AH-64D Apache (Pilot and CP/G)
+* AV8BNA Harrier
+* CH-47F Chinook
+* C-130J-30
 * F-15E
 * F-16 (& All IDF Mods Project F16s)
 * F/A-18C (& Superbug FA-18E/F/G) 
-* A-10C and A-10C2
-* Mirage 2000
-* AV8BNA Harrier
-* Mirage F1EE
+* Hercules - Mod Aircraft (Requires patch available at https://github.com/Summit60/DCS-Hercules-TheWay-patch)
 * Ka-50 Blackshark
-* AH-64D Apache (Pilot and CP/G)
+* Mirage 2000
+* Mirage F1EE
 * OH-58D Kiowa Warrior
-* UH-60L Blackhawk
-* Hercules (Requires patch available at https://github.com/Summit60/DCS-Hercules-TheWay-patch)
-* CH-47F Chinook
 * SA342 Gazelle
+* UH-60L Blackhawk - Mod Aircraft
+
  
 Multiplayer is supported as long as the server has Player Exports turned on (most servers do).
 
