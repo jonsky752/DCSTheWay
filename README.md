@@ -57,6 +57,8 @@ Make sure you have downloaded the program from the Releases section, and not the
 You can use the DCS 2D Mirror that you see on your desktop to interact with TheWay and DCS.
 Or you can use the VR keybinds that can be adjusted in settings. 
 ### I get a "No connection to DCS" error!
+TheWay does not connect to DCS until you are in the cockpit (already pressed the "FLY" button.)
+If, once in the cockpit, "No Connection to DCS" still shows, then:
 Make sure you have followed the installation instructions to the letter, and that every file is where it should be.
 Check if the server you are flying on has Player Exports turned on. If it doesn't, this won't work! 
 ### Where is the app installed by default?
@@ -82,3 +84,4 @@ The application is built using React.js and Electron. If you'd like to contribut
 If you'd like to build/package the code for production, run `npm run package` and check the `dist` folder for the created installer. 
 
 This is the way.
+
