@@ -24,10 +24,10 @@ const SourceSelector = ({
       : `./assets/moduleImages/${module}.jpg`;
   const moduleText =
     module === null
-      ? "No Connection To DCS"
+      ? "Enter Cockpit to Start"
       : isSupportedModule
       ? module
-      : `Module Not Supported: ${module}`;
+      : `Not Supported: ${module}`;
 
   return (
     <>

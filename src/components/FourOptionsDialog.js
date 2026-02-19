@@ -8,10 +8,12 @@ import {
   Stack,
 } from "@mui/material";
 import { createModal } from "react-modal-promise";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { uiActions } from "../store/ui";
 import { saveModulePreferences } from "../utils/savePreferences";
+
+const { ipcRenderer } = window.require("electron");
 
 /**
  * Four-option dialog WITH "Remember this choice"
@@ -35,6 +37,9 @@ const FourDialog = ({
   };
 
   const handleOptionSelected = (option) => {
+    // Ignore empty/undefined options (important when using this dialog for 2-3 options)
+    if (!option) return;
+
     if (rememberChoice) {
       const choice = { module, option };
       dispatch(uiActions.setModulePreference(choice));
@@ -43,22 +48,52 @@ const FourDialog = ({
     onResolve(option);
   };
 
+  // NEW: listen for optionDialogSelect keybind events while this dialog is open
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handler = (_event, which) => {
+      switch (which) {
+        case "op1":
+          handleOptionSelected(op1);
+          break;
+        case "op2":
+          handleOptionSelected(op2);
+          break;
+        case "op3":
+          handleOptionSelected(op3);
+          break;
+        case "op4":
+          handleOptionSelected(op4);
+          break;
+        default:
+          break;
+      }
+    };
+
+    ipcRenderer.on("optionDialogSelect", handler);
+    return () => {
+      ipcRenderer.removeListener("optionDialogSelect", handler);
+    };
+  }, [isOpen, op1, op2, op3, op4]); // (keep it simple: rebind if options change)
+
   return (
     <Dialog open={isOpen} onClose={onReject}>
       <DialogTitle sx={{ textAlign: "center" }}>{title}</DialogTitle>
       <Stack>
-        <Button onClick={() => handleOptionSelected(op1)}>{op1}</Button>
-        <Button onClick={() => handleOptionSelected(op2)}>{op2}</Button>
-        <Button onClick={() => handleOptionSelected(op3)}>{op3}</Button>
-        <Button onClick={() => handleOptionSelected(op4)}>{op4}</Button>
+        {[op1, op2, op3, op4]
+  .filter(Boolean)
+  .map((op) => (
+    <Button key={op} onClick={() => handleOptionSelected(op)}>
+      {op}
+    </Button>
+  ))}
+
 
         <FormGroup sx={{ alignItems: "center" }}>
           <FormControlLabel
             control={
-              <Checkbox
-                checked={rememberChoice}
-                onChange={handleRememberChoice}
-              />
+              <Checkbox checked={rememberChoice} onChange={handleRememberChoice} />
             }
             label="Remember this choice"
           />
@@ -82,17 +117,51 @@ const FourSimpleDialog = ({
   op4,
 }) => {
   const handleOptionSelected = (option) => {
+    if (!option) return;
     onResolve(option);
   };
+
+  // NEW: listen for optionDialogSelect keybind events while this dialog is open
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handler = (_event, which) => {
+      switch (which) {
+        case "op1":
+          handleOptionSelected(op1);
+          break;
+        case "op2":
+          handleOptionSelected(op2);
+          break;
+        case "op3":
+          handleOptionSelected(op3);
+          break;
+        case "op4":
+          handleOptionSelected(op4);
+          break;
+        default:
+          break;
+      }
+    };
+
+    ipcRenderer.on("optionDialogSelect", handler);
+    return () => {
+      ipcRenderer.removeListener("optionDialogSelect", handler);
+    };
+  }, [isOpen, op1, op2, op3, op4]);
 
   return (
     <Dialog open={isOpen} onClose={onReject}>
       <DialogTitle sx={{ textAlign: "center" }}>{title}</DialogTitle>
       <Stack>
-        <Button onClick={() => handleOptionSelected(op1)}>{op1}</Button>
-        <Button onClick={() => handleOptionSelected(op2)}>{op2}</Button>
-        <Button onClick={() => handleOptionSelected(op3)}>{op3}</Button>
-        <Button onClick={() => handleOptionSelected(op4)}>{op4}</Button>
+        {[op1, op2, op3, op4]
+  .filter(Boolean)
+  .map((op) => (
+    <Button key={op} onClick={() => handleOptionSelected(op)}>
+      {op}
+    </Button>
+  ))}
+
       </Stack>
     </Dialog>
   );
