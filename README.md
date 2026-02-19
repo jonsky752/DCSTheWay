@@ -42,6 +42,7 @@ Multiplayer is supported as long as the server has Player Exports turned on (mos
    
 5. Run the installer from the zip file you've previously extracted.
 6. After installation, the program will launch, and you can go fly! You can find a shortcut to TheWay on your desktop.
+THE WAY WILL NOT CONNECT TO DCS UNTIL YOU ARE IN THE COCKPIT OF YOUR CHOSEN MODULE
 
 If you are updating from an older version, simply download the newest release, rerun the installer and replace your existing `TheWay` folder in Saved Games with the new one.
 
@@ -56,9 +57,8 @@ Make sure you have downloaded the program from the Releases section, and not the
 ### How do I use this for VR?
 You can use the DCS 2D Mirror that you see on your desktop to interact with TheWay and DCS.
 Or you can use the VR keybinds that can be adjusted in settings. 
-### I get a "No connection to DCS" error!
-TheWay does not connect to DCS until you are in the cockpit (already pressed the "FLY" button.)
-If, once in the cockpit, "No Connection to DCS" still shows, then:
+### I do not anything other than "Enter cockpit to start" error!
+THE WAY WILL NOT CONNECT TO DCS UNTIL YOU ARE IN THE COCKPIT OF YOUR CHOSEN MODULE
 Make sure you have followed the installation instructions to the letter, and that every file is where it should be.
 Check if the server you are flying on has Player Exports turned on. If it doesn't, this won't work! 
 ### Where is the app installed by default?
@@ -84,4 +84,3 @@ The application is built using React.js and Electron. If you'd like to contribut
 If you'd like to build/package the code for production, run `npm run package` and check the `dist` folder for the created installer. 
 
 This is the way.
-
