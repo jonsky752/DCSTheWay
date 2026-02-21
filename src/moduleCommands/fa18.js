@@ -48,7 +48,6 @@ class fa18 {
     UFCOpt4: 3013,
     UFCOpt5: 3014,
     UFCEnter: 3029,
-    UFCCLR: 3028,
     UFCNorth: 3020,
     UFCSouth: 3026,
     UFCEast: 3024,
@@ -433,57 +432,29 @@ class fa18 {
       }
       this.createPPInputCommands(waypoints);
     } else {
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
       //enter the SUPT menu
-     this.#codesPayload.push({
-      device: this.device_UFC,
-      code: this.#kuKeycodes["UFCCLR"],
-      delay: this.#delay100,
-      activate: 1,
-      addDepress: "true",
-    });
-    this.#codesPayload.push({
-      device: this.device_UFC,
-      code: this.#kuKeycodes["UFCCLR"],
-      delay: this.#delay100,
-      activate: 1,
-      addDepress: "true",
-    });
       this.#codesPayload.push({
         device: this.device_AMPCD,
         code: this.#kuKeycodes["PB18"],
-        delay: this.#delay200,
+        delay: this.#delay100,
         activate: 1,
         addDepress: "true",
       });
-       this.#codesPayload.push({
-      device: this.device_UFC,
-      code: this.#kuKeycodes["UFCCLR"],
-      delay: this.#delay100,
-      activate: 1,
-      addDepress: "true",
-    });
-       this.#codesPayload.push({
+      this.#codesPayload.push({
         device: this.device_AMPCD,
         code: this.#kuKeycodes["PB18"],
-        delay: this.#delay200,
+        delay: this.#delay100,
         activate: 1,
         addDepress: "true",
       });
-
-
-
-      //select HSI
+      //select HSD
       this.#codesPayload.push({
         device: this.device_AMPCD,
         code: this.#kuKeycodes["PB2"],
-        delay: this.#delay500,
+        delay: this.#delay100,
         activate: 1,
         addDepress: "true",
       });
-
       //select DATA
       this.#codesPayload.push({
         device: this.device_AMPCD,

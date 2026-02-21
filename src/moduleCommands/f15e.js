@@ -34,9 +34,9 @@ class f15e {
     // Clear previous payload
     this.#codesPayload = [];
 
-    /*////////////////////////////////////////////////////////
-===================== F-15ESE SLOT LOGIC =====================
-////////////////////////////////////////////////////////*/
+    /*/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+============================================================== F-15ESE SLOT LOGIC =========================================================
+////////////////////////////////////////////////////////*//////////////////////////////////////////////////////////////////////////////////
 
 // Determine seat once
 const isPilot = this.slotVariant.includes("_pilot_");
@@ -45,9 +45,12 @@ const f15eUFCDevice = isPilot ? 56 : 57;
 const f15eMPDDevice = isPilot ? 36 : 39;
 const f15eACCDevice = isPilot ? 32 : null; // WSO may not use ACC
 
-/*////////////////////////////////////////////////////////
-===================== WAYPOINTS =====================
-////////////////////////////////////////////////////////*/
+
+
+/*///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+===================================================================== WAYPOINTS =============================================================
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
+
 if (this.slotVariant.includes("_waypoints")) {
 
       // Clear the scratchpad and menu ///////////////////
@@ -126,9 +129,13 @@ if (this.slotVariant.includes("_waypoints")) {
        
     }
 
+
+
+
     /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ===================== TARGET POINTS =============================================================================================================
-    ////////////////////////////////////////////////////////*////////////////////////////////////////////////////////////////////////////////////////
+    ============================================================== TARGET POINTS ===================================================================
+    ////////////////////////////////////////////////////////*///////////////////////////////////////////////////////////////////////////////////////
+    
     if (this.slotVariant.includes("_targetpoints") || this.slotVariant.includes("_txfr")) {
 
       // Clear and Menu
@@ -136,6 +143,9 @@ if (this.slotVariant.includes("_waypoints")) {
       this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.clear, delay: this.delay, activate: 1, addDepress: "true" });
       this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.clear, delay: this.delay, activate: 1, addDepress: "true" });
       this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.menu, delay: this.delay, activate: 1, addDepress: "true" });
+
+      // A/G Mode
+      this.#codesPayload.push({ device: f15eACCDevice, code: this.#f15eNumberCodes["AG"], delay: this.delay, activate: 1, addDepress: "true", });
 
       // Basepoint B
       this.#codesPayload.push({ device: f15eUFCDevice, code: this.#f15eNumberCodes.shift, delay: this.delay, activate: 1, addDepress: "true" });
@@ -194,17 +204,22 @@ if (this.slotVariant.includes("_waypoints")) {
 
 
 
+    
+
 /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-===================== TRANSFER TO WEAPONS =========================================================================================================
-////////////////////////////////////////////////////////*///////////////////////////////////////////////////////////////////////////////////////////
+========================================================== TRANSFER TO WEAPONS =====================================================================
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 if (this.slotVariant.includes("_txfr")) {
+
+  
 
   const numWaypoints = waypoints.length;
 
 
-  //This blocks sets a specific number of weapon station jumps if 8 or 9 jdams are loaded  
+  //This block sets a specific number of weapon station jumps
   function getPB2PressCount(numWaypoints, waypointNumber) {
   const lookup = {
+    7: [3, 6, 6, 3, 2, 6, 2],          // index 0 → WP1
     8: [3, 7, 3, 4, 3, 3, 7, 2],      // index 0 → WP1
     9: [4, 8, 8, 4, 4, 4, 3, 8, 2]    // index 0 → WP1
   };
@@ -213,7 +228,8 @@ if (this.slotVariant.includes("_txfr")) {
   }
   return 1;} // End of block
 
-
+  // Sets A/G mode, required to transfer Target-Point to Weapon.
+  this.#codesPayload.push({ device: f15eACCDevice, code: this.#f15eNumberCodes.AG, delay: this.delay, activate: 1, addDepress: "true" }); // Enters A/G mode
 
   for (let i = 0; i < numWaypoints; i++) {
 
@@ -231,7 +247,7 @@ if (this.slotVariant.includes("_txfr")) {
 
     // PB2 — This does the actual pushing of MPD PB2
     const presses =
-      (numWaypoints === 8 || numWaypoints === 9)
+      (numWaypoints === 7 ||numWaypoints === 8 || numWaypoints === 9)
         ? getPB2PressCount(numWaypoints, wpNum)
         : 1;
     for (let j = 0; j < presses; j++) {

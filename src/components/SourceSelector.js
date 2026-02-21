@@ -24,10 +24,10 @@ const SourceSelector = ({
       : `./assets/moduleImages/${module}.jpg`;
   const moduleText =
     module === null
-      ? "No Connection To DCS"
+      ? "Enter Cockpit to Connect"
       : isSupportedModule
       ? module
-      : `Module Not Supported: ${module}`;
+      : `Not Supported: ${module}`;
 
   return (
     <>
@@ -44,20 +44,24 @@ const SourceSelector = ({
           >
             <Grid item xs>
               <Select
-                value={inputMethod}
-                onChange={handleInputMethodChange}
-                sx={{ width: "100%" }}
-                size="small"
-                inputProps={{
-                  MenuProps: {
-                    MenuListProps: {
-                      sx: {
-                        backgroundColor: "background.default",
-                      },
-                    },
-                  },
-                }}
-              >
+  value={inputMethod}
+  onChange={handleInputMethodChange}
+  size="small"
+  sx={{
+    width: "60%",
+    backgroundColor: "rgba(0, 0, 0, 0.45)", // 👈 darker, much easier to read
+    color: "text.primary",
+  }}
+  inputProps={{
+    MenuProps: {
+      MenuListProps: {
+        sx: {
+          backgroundColor: "rgba(20, 20, 20, 0.95)",
+        },
+      },
+    },
+  }}
+>
                 {inputMethods.map((im) => (
                   <MenuItem key={im} value={im}>
                     {im}
