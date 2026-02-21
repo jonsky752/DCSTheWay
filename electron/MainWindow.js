@@ -1,4 +1,4 @@
-const { BrowserWindow, screen, ipcMain } = require("electron");
+const { BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
 
 class MainWindow extends BrowserWindow {
@@ -8,16 +8,8 @@ class MainWindow extends BrowserWindow {
       show: false,
       width: 300,
       height: 500,
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-      x: 3800, //0,
-      y: 0, //screen.getPrimaryDisplay().workAreaSize.height - 500,
-=======
-=======
->>>>>>> Stashed changes
-      x: 0,
+      x: 0, //3800,
       y: screen.getPrimaryDisplay().workAreaSize.height - 500, //0,
->>>>>>> Stashed changes
       webPreferences: {
         nodeIntegration: true,
         contextIsolation: false,
@@ -26,38 +18,49 @@ class MainWindow extends BrowserWindow {
       resizable: false,
       transparent: true,
       frame: false,
-      focusable: false,
+
+      // Keep focusable true; we’ll manage focus *only* when needed
+      focusable: false, //// changed by user
+
+      // Ensure taskbar presence
+      skipTaskbar: false,
     });
 
     this.setMenu(null);
-    if (process.platform === "win32") {
-      const WM_INITMENU = 0x0116;
-      this.hookWindowMessage(WM_INITMENU, () => {
-        this.setEnabled(false);
-        this.setEnabled(true);
-      });
-    }
-    this.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-    this.setAlwaysOnTop(true, "screen-saver");
+    this.setSkipTaskbar(false);
 
+    // Keep it above most windows, but avoid blur/restore spam that fights games
+    const reassertOnTop = () => this.setAlwaysOnTop(true, "screen-saver");
+    reassertOnTop();
+
+    this.on("ready-to-show", () => {
+      this.show();
+      reassertOnTop();
+    });
+
+    this.on("show", reassertOnTop);
+
+    // IPC
     ipcMain.on("minimize", () => {
-      this.setFocusable(true);
       this.minimize();
     });
+
     ipcMain.on("close", () => {
       this.close();
     });
+
+    // These are used when hovering inputs; keep them but don’t hard-flip always-on-top repeatedly
     ipcMain.on("focus", () => {
       this.setFocusable(true);
-    });
-    ipcMain.on("defocus", () => {
-      this.setFocusable(false);
-    });
-    this.on("restore", () => {
-      this.setFocusable(false);
-    });
-    this.on("ready-to-show", () => {
       this.show();
+      this.focus();
+      reassertOnTop();
+    });
+
+    ipcMain.on("defocus", () => {
+      // Don’t set focusable false; it’s what causes “can’t alt-tab back” headaches
+      // Just blur the active element in the renderer side (which you already do)
+      reassertOnTop();
     });
   }
 }
