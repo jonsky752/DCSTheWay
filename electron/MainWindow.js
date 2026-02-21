@@ -1,4 +1,4 @@
-const { BrowserWindow, ipcMain } = require("electron");
+const { BrowserWindow, ipcMain, screen } = require("electron");
 const path = require("path");
 
 class MainWindow extends BrowserWindow {
