@@ -8,20 +8,22 @@ You can also share those waypoints with your friends, and you will all fly the s
 
 ## What is supported?
 Supported modules:
+* A-10C and A-10C2
+* AH-64D Apache (Pilot and CP/G)
+* AV8BNA Harrier
+* CH-47F Chinook
+* C-130J-30
 * F-15E
 * F-16 (& All IDF Mods Project F16s)
 * F/A-18C (& Superbug FA-18E/F/G) 
-* A-10C and A-10C2
-* Mirage 2000
-* AV8BNA Harrier
-* Mirage F1EE
+* Hercules - Mod Aircraft (Requires patch available at https://github.com/Summit60/DCS-Hercules-TheWay-patch)
 * Ka-50 Blackshark
-* AH-64D Apache (Pilot and CP/G)
+* Mirage 2000
+* Mirage F1EE
 * OH-58D Kiowa Warrior
-* UH-60L Blackhawk
-* Hercules (Requires patch available at https://github.com/Summit60/DCS-Hercules-TheWay-patch)
-* CH-47F Chinook
 * SA342 Gazelle
+* UH-60L Blackhawk - Mod Aircraft
+
  
 Multiplayer is supported as long as the server has Player Exports turned on (most servers do).
 
@@ -40,6 +42,7 @@ Multiplayer is supported as long as the server has Player Exports turned on (mos
    
 5. Run the installer from the zip file you've previously extracted.
 6. After installation, the program will launch, and you can go fly! You can find a shortcut to TheWay on your desktop.
+THE WAY WILL NOT CONNECT TO DCS UNTIL YOU ARE IN THE COCKPIT OF YOUR CHOSEN MODULE
 
 If you are updating from an older version, simply download the newest release, rerun the installer and replace your existing `TheWay` folder in Saved Games with the new one.
 
@@ -54,7 +57,8 @@ Make sure you have downloaded the program from the Releases section, and not the
 ### How do I use this for VR?
 You can use the DCS 2D Mirror that you see on your desktop to interact with TheWay and DCS.
 Or you can use the VR keybinds that can be adjusted in settings. 
-### I get a "No connection to DCS" error!
+### I do not anything other than "Enter cockpit to start" error!
+THE WAY WILL NOT CONNECT TO DCS UNTIL YOU ARE IN THE COCKPIT OF YOUR CHOSEN MODULE.
 Make sure you have followed the installation instructions to the letter, and that every file is where it should be.
 Check if the server you are flying on has Player Exports turned on. If it doesn't, this won't work! 
 ### Where is the app installed by default?
