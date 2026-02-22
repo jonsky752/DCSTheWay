@@ -186,32 +186,37 @@ export const UNIT_CATALOG = [
     "category": "Air Defense",
     "subcategories": [
       {
-        "name": "AAA Emplacement",
+        "name": "AAA - fixed",
         "units": [
           "Allies_Director",
           "bofors40",
-          "flak18",
           "flak30",
-          "flak36",
-          "flak37",
           "flak38",
-          "flak41",
           "Flakscheinwerfer_37",
           "KDO_Mod40",
-          "KS-19",
           "M1_37mm",
           "M45_Quadmount",
           "Maschinensatz_33",
-          "QF_37_AA",
           "S-60_Type59_Artillery",
           "SON_9",
-          "Type_3_80mm_AA",
-          "Type_88_75mm_AA",
           "Type_96_25mm_AA",
           "ZU-23 Closed Insurgent",
           "ZU-23 Emplacement",
           "ZU-23 Emplacement Closed",
           "ZU-23 Insurgent"
+        ]
+      },
+      {
+        "name": "FLAK",
+        "units": [
+          "flak18",
+          "flak36",
+          "flak37",
+          "flak41",
+          "KS-19",
+          "QF_37_AA",
+          "Type_3_80mm_AA",
+          "Type_88_75mm_AA"
         ]
       },
       {
@@ -228,7 +233,7 @@ export const UNIT_CATALOG = [
         ]
       },
       {
-        "name": "EW Radar",
+        "name": "RADAR-EW",
         "units": [
           "1L13 EWR",
           "55G6 EWR",
@@ -300,7 +305,7 @@ export const UNIT_CATALOG = [
         ]
       },
       {
-        "name": "Search Radar",
+        "name": "RADAR - sch",
         "units": [
           "Dog Ear radar",
           "Hawk sr",
@@ -316,7 +321,7 @@ export const UNIT_CATALOG = [
         ]
       },
       {
-        "name": "Search/Track Radar",
+        "name": "RADAR - sch+trk",
         "units": [
           "CHAP_IRISTSLM_STR",
           "Hawk cwar",
@@ -327,7 +332,7 @@ export const UNIT_CATALOG = [
         ]
       },
       {
-        "name": "AAA Vehicle",
+        "name": "AAA - vehicle",
         "units": [
           "CHAP_PantsirS1",
           "Gepard",
@@ -343,7 +348,7 @@ export const UNIT_CATALOG = [
         ]
       },
       {
-        "name": "Track Radar",
+        "name": "RADAR - trk",
         "units": [
           "Hawk tr",
           "rapier_fsa_blindfire_radar",
@@ -489,7 +494,7 @@ export const UNIT_CATALOG = [
     "category": "Artillery",
     "subcategories": [
       {
-        "name": "Command/Control",
+        "name": "Command",
         "units": [
           "Grad_FDDM",
           "MLRS FDDM"
@@ -575,24 +580,34 @@ export const UNIT_CATALOG = [
     "category": "Infantry",
     "subcategories": [
       {
-        "name": "ALL",
+        "name": "Rifleman",
         "units": [
           "Infantry AK",
+          "Infantry AK Ins",
           "Infantry AK ver2",
           "Infantry AK ver3",
+          "JTAC",
+          "Paratrooper AKS-74",
           "Soldier AK",
           "Soldier M249",
           "Soldier M4",
           "Soldier M4 GRG",
-          "Soldier RPG",
           "soldier_mauser98",
-          "soldier_wwii_us"
+          "soldier_wwii_us",
+          "soldier_wwii_br_01"
         ]
       },
       {
-        "name": "ALL-1",
+        "name": "Observer",
         "units": [
-          "Silkworm_SR"
+          "JTAC"
+   ]
+      },
+      {
+        "name": "RPG",
+        "units": [
+          "Soldier RPG",
+          "Paratrooper RPG-16"
         ]
       }
     ]
@@ -607,7 +622,8 @@ export const UNIT_CATALOG = [
           "CHAP_9K720_HE",
           "hy_launcher",
           "Scud_B",
-          "v1_launcher"
+          "v1_launcher",
+          "Silkworm_SR"
         ]
       }
     ]
@@ -768,7 +784,7 @@ export const UNIT_CATALOG = [
       ]
     },
     {
-      "name": "Command Control",
+      "name": "Command",
       "units": [
         "Predator GCS",
         "Predator TrojanSpirit",

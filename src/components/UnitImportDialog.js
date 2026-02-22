@@ -1,6 +1,7 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import { UNIT_LOOKUP } from "../data/unitLookupFromCatalog";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import {
   Dialog,
   DialogContent,
@@ -25,6 +26,8 @@ import {
   Menu,
   FormGroup,
   FormControlLabel,
+  OutlinedInput,
+  InputAdornment,
 } from "@mui/material";
 
 const { ipcRenderer } = window.require("electron");
@@ -328,8 +331,9 @@ const visibleColCount = React.useMemo(() => {
   const keys = ["coalition","type","category","subcategory","capability","name","position","elev","brgDeg","rng","speed","import"];
   return keys.reduce((acc, k) => acc + (isColVisible(k) ? 1 : 0), 0);
 }, [colVis]);
-const didOpenRefreshRef = React.useRef(false);
   const dragRef = React.useRef(null);
+
+  const refreshMinTimerRef = React.useRef(0); // store "min active until" timestamp
 
   
   // Column show/hide menu
@@ -346,8 +350,41 @@ const didOpenRefreshRef = React.useRef(false);
   // Snapshot timing for speed calculation
   const lastSnapshotAtRef = React.useRef(0);
   const prevSnapshotAtRef = React.useRef(0);
+
+  // Snapshot age display (bottom-right)
+  const [snapshotAgeText, setSnapshotAgeText] = React.useState("No snapshot");
 // Snapshot reference point for BRG/RNG + Within
   const [refPoint, setRefPoint] = React.useState(null);
+
+  // Keep the snapshot age label ticking while the dialog is open.
+  // (We store the snapshot timestamp in a ref, so we need an interval to force UI updates.)
+  React.useEffect(() => {
+    if (!open) return;
+
+    const formatAge = (ms) => {
+      if (!Number.isFinite(ms) || ms <= 0) return "0s";
+      const totalSec = Math.floor(ms / 1000);
+      const s = totalSec % 60;
+      const m = Math.floor(totalSec / 60) % 60;
+      const h = Math.floor(totalSec / 3600);
+      if (h > 0) return `${h}h ${String(m).padStart(2, "0")}m`;
+      if (m > 0) return `${m}m ${String(s).padStart(2, "0")}s`;
+      return `${s}s`;
+    };
+
+    const tick = () => {
+      const t = lastSnapshotAtRef.current;
+      if (!t) {
+        setSnapshotAgeText("No snapshot");
+        return;
+      }
+      setSnapshotAgeText(formatAge(Date.now() - t));
+    };
+
+    tick();
+    const id = window.setInterval(tick, 500);
+    return () => window.clearInterval(id);
+  }, [open]);
 
   // Persist user choices
   React.useEffect(() => writeLS(LS_KEYS.coalition, intelCoalitionFilter), [intelCoalitionFilter]);
@@ -567,8 +604,18 @@ const refPointEffective = React.useMemo(() => {
         setSnapshot(normalized);
         setImportMap(nextMap);
         lastSnapshotAtRef.current = Date.now();
+        setSnapshotAgeText("0s");
       } finally {
-        setIsIntelLoading(false);
+        const releaseLoading = () => setIsIntelLoading(false);
+
+const now = Date.now();
+const minUntil = refreshMinTimerRef.current || now;
+
+if (now >= minUntil) {
+  releaseLoading();
+} else {
+  setTimeout(releaseLoading, minUntil - now);
+}
       }
     };
 
@@ -594,48 +641,55 @@ const refPointEffective = React.useMemo(() => {
   };
 
   const refresh = React.useCallback(() => {
-    // Store current positions for moved comparison
-    prevSnapshotAtRef.current = lastSnapshotAtRef.current || Date.now();
-    const prev = new Map();
-    for (const u of snapshot) prev.set(u.id, { lat: u.lat, lon: u.lon });
-    prevPosRef.current = prev;
+  // Clear any existing minimum timer
+  if (refreshMinTimerRef.current) {
+    clearTimeout(refreshMinTimerRef.current);
+    refreshMinTimerRef.current = null;
+  }
 
-    setIsIntelLoading(true);
+  // Mark as loading immediately
+  setIsIntelLoading(true);
 
-    const coalition = (intelCoalitionFilter || "All").toLowerCase();
-    const origin = intelOrigin === "Ownship" ? "ownship" : "camera";
+  // Enforce minimum visible "active" time (2s)
+  const minActiveUntil = Date.now() + 2000;
 
-    // If Type = All, don't filter domain
-    const domain = intelUnitType === "All" ? "all" : (intelUnitType || "Ground").toLowerCase();
+  // Store current positions for moved comparison
+  prevSnapshotAtRef.current = lastSnapshotAtRef.current || Date.now();
+  const prev = new Map();
+  for (const u of snapshot) prev.set(u.id, { lat: u.lat, lon: u.lon });
+  prevPosRef.current = prev;
 
-    const radiusNm =
-      intelWithinEnabled
-        ? Math.max(0, unitsMode === "Metric" ? kmToNm(Number(intelRadius) || 0) : Number(intelRadius) || 0)
-        : 9999;
+  const coalition = (intelCoalitionFilter || "All").toLowerCase();
+  const origin = intelOrigin === "Ownship" ? "ownship" : "camera";
+  const domain = intelUnitType === "All" ? "all" : (intelUnitType || "Ground").toLowerCase();
 
-    ipcRenderer.send("messageToDcs", {
-      cmd: "INTEL_SNAPSHOT",
-      radiusNm,
-      coalition,
-      domain,
-      origin,
-      type: "intel_snapshot",
-      payload: { radiusNm, coalition, domain, origin },
-    });
-  }, [snapshot, intelCoalitionFilter, intelUnitType, intelOrigin, intelWithinEnabled, intelRadius, unitsMode]);
+  const radiusNm =
+    intelWithinEnabled
+      ? Math.max(0, unitsMode === "Metric" ? kmToNm(Number(intelRadius) || 0) : Number(intelRadius) || 0)
+      : 9999;
 
-  // Auto refresh ONCE when the window opens (no spam)
-  React.useEffect(() => {
-    if (!open) {
-      didOpenRefreshRef.current = false;
-      return;
-    }
-    if (didOpenRefreshRef.current) return;
-    didOpenRefreshRef.current = true;
+  ipcRenderer.send("messageToDcs", {
+    cmd: "INTEL_SNAPSHOT",
+    radiusNm,
+    coalition,
+    domain,
+    origin,
+    type: "intel_snapshot",
+    payload: { radiusNm, coalition, domain, origin },
+  });
 
-    // next tick so IPC listener is definitely attached
-    window.setTimeout(() => refresh(), 0);
-  }, [open, refresh]);
+  // Store when we are allowed to clear loading
+  refreshMinTimerRef.current = minActiveUntil;
+}, [
+  snapshot,
+  intelCoalitionFilter,
+  intelUnitType,
+  intelOrigin,
+  intelWithinEnabled,
+  intelRadius,
+  unitsMode,
+]);
+  // NOTE: No automatic refresh on open (manual Refresh only)
 
   const rows = React.useMemo(() => {
     const radiusNm = Math.max(0, unitsMode === "Metric" ? kmToNm(Number(intelRadius) || 0) : Number(intelRadius) || 0);
@@ -764,8 +818,7 @@ const refPointEffective = React.useMemo(() => {
     whiteSpace: "nowrap",
     overflow: "hidden",
     textOverflow: "ellipsis",
-    position: "relative",
-    fontSize: "0.70rem",
+fontSize: "0.70rem",
   });
 
   const headCellSx = (key, isLast = false) => ({
@@ -774,6 +827,10 @@ const refPointEffective = React.useMemo(() => {
     backgroundColor: "background.paper",
     userSelect: "none",
     fontSize: "0.70rem",
+    // IMPORTANT: keep header pinned while TableContainer scrolls
+    position: "sticky",
+    top: 0,
+    zIndex: 3,
   });
 
   const startResize = (key, e) => {
@@ -857,7 +914,7 @@ const refPointEffective = React.useMemo(() => {
 
   return (
     <Dialog open={open} onClose={onClose} fullScreen PaperProps={{ sx: { width: "100vw", height: "100vh" } }}>
-      <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 1.0, overflow: "hidden" }}>
+      <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 1.0, overflow: "hidden", minHeight: 0, flex: 1, position: "relative" }}>
         {/* Header toolbar: Coalition / Type / Within / Units / of / Origin */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.2, flexWrap: "wrap" }}>
           <FormControl size="small" sx={fcCompact(120)}>
@@ -941,13 +998,24 @@ const refPointEffective = React.useMemo(() => {
           </FormControl>
 
 
-<Button
-  variant="outlined"
-  size="small"
-  onClick={(e) => setColsAnchorEl(e.currentTarget)}
->
-  Columns
-</Button>
+<FormControl size="small" sx={{ width: 115 }}>
+  <InputLabel>Show/Hide</InputLabel>
+  <OutlinedInput
+    label="Show/Hide"
+    value="Columns"
+    readOnly
+    onClick={(e) => setColsAnchorEl(e.currentTarget)}
+    endAdornment={
+      <InputAdornment position="end">
+        <ArrowDropDownIcon sx={{ opacity: 0.7 }} />
+      </InputAdornment>
+    }
+    sx={{
+      cursor: "pointer",
+      "& input": { cursor: "pointer", py: 1.0 },
+    }}
+  />
+</FormControl>
 
 <Menu
   anchorEl={colsAnchorEl}
@@ -1028,8 +1096,8 @@ const refPointEffective = React.useMemo(() => {
         </Box>
 
         {/* Table */}
-        <TableContainer component={Paper} variant="outlined" sx={{ flex: 1, overflow: "auto" }}>
-          <Table stickyHeader size="small" sx={{ tableLayout: "fixed" }}>
+        <TableContainer component={Paper} variant="outlined" sx={{ flex: 1, overflow: "auto", minHeight: 0, maxHeight: "100%" }}>
+          <Table stickyHeader size="small" sx={{ tableLayout: "fixed", borderCollapse: "separate" }}>
             <TableHead>
               <TableRow>
 {isColVisible("coalition") && (
@@ -1292,7 +1360,23 @@ const refPointEffective = React.useMemo(() => {
 >
   Press Refresh again to update positions. Units that have moved since the previous snapshot are outlined in red.
 </Typography>
-      </DialogContent>
+      
+        {/* Snapshot age (small, bottom-right) */}
+        <Typography
+          variant="caption"
+          sx={{
+            position: "absolute",
+            right: 10,
+            bottom: 8,
+            opacity: 0.65,
+            fontSize: "0.72rem",
+            pointerEvents: "none",
+            userSelect: "none",
+          }}
+        >
+          Snapshot age: {snapshotAgeText}
+        </Typography>
+</DialogContent>
 
       
     </Dialog>
