@@ -1,4 +1,4 @@
-export const inputMethods = ["F10 Map", "From a file"];
+export const inputMethods = ["F10 Map", "Recon Request", "From a file"];
 export const supportedModules = [
   "Spectator",
   "F-15ESE",
