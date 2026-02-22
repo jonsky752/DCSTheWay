@@ -276,24 +276,96 @@ local function send_intel_snapshot(units, origin)
         return
     end
 
-    local payload = {
-        cmd = "INTEL_SNAPSHOT_RESULT",
-        origin = origin or nil,
-        units = units or {}
-    }
+    units = units or {}
 
-    local msg = safe_json_encode(payload)
-    if not msg then
-        log.write("THEWAY", log.ERROR, "INTEL_SNAPSHOT: JSON encode failed")
-        return
+    -- Keep UDP packets comfortably small (way under MTU / fragmentation)
+    local MAX_BYTES = 8000
+
+    -- Unique-ish id to group parts on the app side
+    local snapId = math.floor(socket.gettime() * 1000)
+
+    -- Send a BEGIN message (small)
+    local beginPayload = {
+        cmd = "INTEL_SNAPSHOT_BEGIN",
+        snapId = snapId,
+        origin = origin or nil,
+        count = #units
+    }
+    local beginMsg = safe_json_encode(beginPayload)
+    if beginMsg then
+        pcall(function()
+            socket.try(udpSpeaker:sendto(beginMsg, "127.0.0.1", 42069))
+        end)
     end
 
-    local ok, err = pcall(function()
-        socket.try(udpSpeaker:sendto(msg, "127.0.0.1", 42069))
-    end)
+    -- Build chunks of units
+    local chunk = {}
+    local idx = 0
+    local part = 0
 
-    if not ok then
-        log.write("THEWAY", log.ERROR, "INTEL_SNAPSHOT: UDP send failed: " .. tostring(err))
+    local function send_chunk()
+        if #chunk == 0 then return end
+        part = part + 1
+
+        local payload = {
+            cmd = "INTEL_SNAPSHOT_PART",
+            snapId = snapId,
+            part = part,
+            units = chunk
+        }
+
+        local msg = safe_json_encode(payload)
+        if not msg then
+            log.write("THEWAY", log.ERROR, "INTEL_SNAPSHOT: JSON encode failed for part " .. tostring(part))
+            return
+        end
+
+        pcall(function()
+            socket.try(udpSpeaker:sendto(msg, "127.0.0.1", 42069))
+        end)
+
+        chunk = {}
+    end
+
+    -- Conservative sizing: keep adding units until encoding would exceed MAX_BYTES
+    for i = 1, #units do
+        local u = units[i]
+        table.insert(chunk, u)
+
+        local testPayload = {
+            cmd = "INTEL_SNAPSHOT_PART",
+            snapId = snapId,
+            part = part + 1,
+            units = chunk
+        }
+        local testMsg = safe_json_encode(testPayload)
+
+        if not testMsg then
+            -- If encoding failed with this unit included, send previous chunk and start fresh
+            table.remove(chunk)
+            send_chunk()
+            chunk = { u }
+        elseif #testMsg > MAX_BYTES then
+            -- Too big, send previous chunk and start a new one with this unit
+            table.remove(chunk)
+            send_chunk()
+            chunk = { u }
+        end
+    end
+
+    -- Send final chunk
+    send_chunk()
+
+    -- Send DONE message
+    local donePayload = {
+        cmd = "INTEL_SNAPSHOT_DONE",
+        snapId = snapId
+    }
+    local doneMsg = safe_json_encode(donePayload)
+    if doneMsg then
+        pcall(function()
+            socket.try(udpSpeaker:sendto(doneMsg, "127.0.0.1", 42069))
+        end)
     end
 end
 
