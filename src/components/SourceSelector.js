@@ -13,8 +13,26 @@ const SourceSelector = ({
   setInputMethod,
   isSelecting,
 }) => {
+  const applyInputMethod = (next) => {
+    if (next === inputMethod) return;
+
+    // If we were in "Begin waypoint selection" mode, auto-finish/cancel it
+    // before changing source (prevents being stuck needing to switch back).
+    if (isSelecting) {
+      handleSelectionToggle();
+    }
+
+    setInputMethod(next);
+  };
+
+  const cycleInputMethod = (dir) => {
+    const idx = inputMethods.findIndex((m) => m === inputMethod);
+    const nextIdx = (idx + dir + inputMethods.length) % inputMethods.length;
+    applyInputMethod(inputMethods[nextIdx]);
+  };
+
   const handleInputMethodChange = (event) => {
-    setInputMethod(event.target.value);
+    applyInputMethod(event.target.value);
   };
 
   const isSupportedModule = supportedModules.includes(module);
@@ -47,6 +65,11 @@ const SourceSelector = ({
   value={inputMethod}
   onChange={handleInputMethodChange}
   size="small"
+  onWheel={(e) => {
+    e.preventDefault();
+    const dir = e.deltaY > 0 ? 1 : -1;
+    cycleInputMethod(dir);
+  }}
   sx={{
     width: "60%",
     backgroundColor: "rgba(0, 0, 0, 0.45)", // 👈 darker, much easier to read

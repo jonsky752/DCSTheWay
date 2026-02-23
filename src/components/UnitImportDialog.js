@@ -271,8 +271,8 @@ export default function UnitImportDialog({ open, onClose }) {
   const { lat: dcsLat, long: dcsLon } = useSelector((state) => state.dcsPoint);
 
   // Sorting
-  const [orderBy, setOrderBy] = React.useState("rngNm");
-  const [order, setOrder] = React.useState("asc");
+  const [orderBy, setOrderBy] = React.useState("selected");
+const [order, setOrder] = React.useState("desc"); // selected first
 
   // Column widths (remembered)
   const defaultColWidths = {
@@ -598,11 +598,17 @@ const refPointEffective = React.useMemo(() => {
           })
           .filter(Boolean);
 
-        const nextMap = {};
-        for (const u of normalized) nextMap[u.id] = true;
+       setSnapshot(normalized);
 
-        setSnapshot(normalized);
-        setImportMap(nextMap);
+setImportMap((prev) => {
+  const next = {};
+  for (const u of normalized) {
+    // keep selection if it was already selected
+    next[u.id] = !!prev?.[u.id];
+  }
+  return next;
+});
+
         lastSnapshotAtRef.current = Date.now();
         setSnapshotAgeText("0s");
       } finally {
@@ -760,6 +766,7 @@ if (now >= minUntil) {
       if (key === "rng") return r.displayRng;
       if (key === "elev") return r.displayElev;
       if (key === "speed") return r.speed;
+      if (key === "selected") return importMap[r.id] ? 1 : 0; // <— NEW (1 selected, 0 not)
       return r[key];
     };
 
@@ -914,7 +921,7 @@ fontSize: "0.70rem",
 
   return (
     <Dialog open={open} onClose={onClose} fullScreen PaperProps={{ sx: { width: "100vw", height: "100vh" } }}>
-      <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 1.0, overflow: "hidden", minHeight: 0, flex: 1, position: "relative" }}>
+      <DialogContent sx={{ px:0.2, py: 0.8, display: "flex", flexDirection: "column", gap: 1.0, overflow: "hidden", minHeight: 0, flex: 1, position: "relative" }}>
         {/* Header toolbar: Coalition / Type / Within / Units / of / Origin */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.2, flexWrap: "wrap" }}>
           <FormControl size="small" sx={fcCompact(120)}>
@@ -1087,12 +1094,17 @@ fontSize: "0.70rem",
 
 
           <Button variant="outlined" size="small" onClick={refresh} disabled={isIntelLoading}>
-            {isIntelLoading ? "Refreshing…" : "Refresh"}
+            {isIntelLoading ? "Request" : "Request"}
           </Button>
 
-          <Button variant="contained" size="small" onClick={handleImportSelected} disabled={selectedCount === 0}>
-            Import
-          </Button>
+          <Button
+  variant="contained"
+  size="small"
+  onClick={handleImportSelected}
+  disabled={selectedCount === 0}
+>
+  Import {selectedCount}
+</Button>
         </Box>
 
         {/* Table */}
@@ -1106,6 +1118,7 @@ fontSize: "0.70rem",
       active={orderBy === "coalition"}
       direction={orderBy === "coalition" ? order : "asc"}
       onClick={() => handleSort("coalition")}
+      sx={{ width: "100%", justifyContent: "space-between" }}
     >
       Coalition
     </TableSortLabel>
@@ -1119,6 +1132,7 @@ fontSize: "0.70rem",
       active={orderBy === "type"}
       direction={orderBy === "type" ? order : "asc"}
       onClick={() => handleSort("type")}
+      sx={{ width: "100%", justifyContent: "space-between" }}
     >
       Type
     </TableSortLabel>
@@ -1132,6 +1146,7 @@ fontSize: "0.70rem",
       active={orderBy === "category"}
       direction={orderBy === "category" ? order : "asc"}
       onClick={() => handleSort("category")}
+      sx={{ width: "100%", justifyContent: "space-between" }}
     >
       Category
     </TableSortLabel>
@@ -1145,6 +1160,7 @@ fontSize: "0.70rem",
       active={orderBy === "subcategory"}
       direction={orderBy === "subcategory" ? order : "asc"}
       onClick={() => handleSort("subcategory")}
+      sx={{ width: "100%", justifyContent: "space-between" }}
     >
       SubCategory
     </TableSortLabel>
@@ -1158,6 +1174,7 @@ fontSize: "0.70rem",
       active={orderBy === "capability"}
       direction={orderBy === "capability" ? order : "asc"}
       onClick={() => handleSort("capability")}
+      sx={{ width: "100%", justifyContent: "space-between" }}
     >
       Capability
     </TableSortLabel>
@@ -1171,6 +1188,7 @@ fontSize: "0.70rem",
       active={orderBy === "name"}
       direction={orderBy === "name" ? order : "asc"}
       onClick={() => handleSort("name")}
+      sx={{ width: "100%", justifyContent: "space-between" }}
     >
       Unit / Group Name
     </TableSortLabel>
@@ -1222,6 +1240,7 @@ fontSize: "0.70rem",
       active={orderBy === "elev"}
       direction={orderBy === "elev" ? order : "asc"}
       onClick={() => handleSort("elev")}
+      sx={{ width: "100%", justifyContent: "space-between" }}
     >
       Elev ({elevUnitLabel})
     </TableSortLabel>
@@ -1235,6 +1254,7 @@ fontSize: "0.70rem",
       active={orderBy === "brgDeg"}
       direction={orderBy === "brgDeg" ? order : "asc"}
       onClick={() => handleSort("brgDeg")}
+      sx={{ width: "100%", justifyContent: "space-between" }}
     >
       Bearing
     </TableSortLabel>
@@ -1248,6 +1268,7 @@ fontSize: "0.70rem",
       active={orderBy === "rng"}
       direction={orderBy === "rng" ? order : "asc"}
       onClick={() => handleSort("rng")}
+      sx={{ width: "100%", justifyContent: "space-between" }}
     >
       Range
     </TableSortLabel>
@@ -1268,19 +1289,86 @@ fontSize: "0.70rem",
 </TableCell>
 )}
 {/* Import (always shown) */}
-<TableCell align="center" sx={headCellSx("import", true)}>
-  <Checkbox
-    checked={allSelected}
-    indeterminate={someSelected}
-    onChange={toggleSelectAll}
-    inputProps={{ "aria-label": "select/deselect all" }}
-    size="small"
-    icon={normalBox.icon}
-    checkedIcon={normalBox.checkedIcon}
-    sx={{ p: 0.25 }}
-  />
+<TableCell
+  align="center"
+  sx={{
+  ...headCellSx("import", true),
+  cursor: "pointer",
+  px: 0.5,
+  position: "relative",
+
+  "&:hover .importSort .MuiTableSortLabel-icon": { opacity: 0.4 },
+  "&:hover .importSort.Mui-active .MuiTableSortLabel-icon": { opacity: 1 },
+}}
+  onClick={() => handleSort("selected")}
+  title="Click to sort by selected"
+>
+  {/* Centered select-all checkbox */}
+  <Box
+    sx={{
+      position: "absolute",
+      left: "50%",
+      top: "50%",
+      transform: "translate(-50%, -50%)",
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 1,
+    }}
+    onClick={(e) => e.stopPropagation()}
+    onMouseDown={(e) => e.stopPropagation()}
+  >
+    <Checkbox
+      checked={allSelected}
+      indeterminate={someSelected}
+      onChange={toggleSelectAll}
+      inputProps={{ "aria-label": "select/deselect all" }}
+      size="small"
+      icon={normalBox.icon}
+      checkedIcon={normalBox.checkedIcon}
+      sx={{ p: 0.25 }}
+    />
+  </Box>
+
+  {/* Right-aligned sort indicator */}
+<Box
+  sx={{
+    position: "absolute",
+    right: 0,
+    top: "50%",
+    transform: "translateY(-50%)",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    pointerEvents: "none",
+  }}
+>
+  <TableSortLabel
+    className="importSort"
+    active={orderBy === "selected"}
+    direction={orderBy === "selected" ? order : "desc"}
+    sx={{
+      m: 0,
+
+      // icon hidden by default (when NOT active)
+      "& .MuiTableSortLabel-icon": {
+        opacity: 0,
+        transition: "opacity 120ms ease-in-out",
+      },
+
+      // icon visible when active
+      "&.Mui-active .MuiTableSortLabel-icon": {
+        opacity: 1,
+      },
+    }}
+  >
+    <span />
+  </TableSortLabel>
+</Box>
+
   <ResizeHandle colKey="import" />
 </TableCell>
+
 </TableRow>
             </TableHead>
 
@@ -1356,9 +1444,11 @@ fontSize: "0.70rem",
 
         <Typography
   variant="caption"
-  sx={{ opacity: 0.7, fontSize: "0.75rem" }}
+  sx={{ opacity: 0.5, bottom: 80, fontSize: "0.7rem" }}
 >
-  Press Refresh again to update positions. Units that have moved since the previous snapshot are outlined in red.
+  Press REQUEST to capture units. REQUEST again to calculate moving units. 
+  
+  PREVIOUS SNAPSHOT MAY BE SHOWN.  Check Snapshot age -->
 </Typography>
       
         {/* Snapshot age (small, bottom-right) */}
@@ -1366,10 +1456,10 @@ fontSize: "0.70rem",
           variant="caption"
           sx={{
             position: "absolute",
-            right: 10,
-            bottom: 8,
-            opacity: 0.65,
-            fontSize: "0.72rem",
+            right: 28,
+            bottom: 5,
+            opacity: 0.7,
+            fontSize: "0.75rem",
             pointerEvents: "none",
             userSelect: "none",
           }}

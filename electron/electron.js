@@ -23,6 +23,8 @@ let fileHandler;
 let udpSender;
 let userPreferenceHandler;
 
+let isQuitting = false;
+
 const winStore = new Store({ name: "window-state" });
 
 function buildAppUrl(windowName) {
@@ -54,12 +56,27 @@ async function createWindow() {
   mainWindow.on("closed", () => app.quit());
 }
 
+function sendCrosshairToDcs(enabled) {
+  // Fire-and-forget. Uses same TCP port as your existing crosshair logic.
+  try {
+    const net = require("net");
+    const client = new net.Socket();
+    client.connect(42070, "127.0.0.1", function () {
+      client.write(JSON.stringify({ type: "crosshair", payload: enabled ? "true" : "false" }) + "\n");
+      client.end();
+    });
+    client.on("error", () => {});
+  } catch {}
+}
+
 function createOrShowUnitImport() {
   // If it already exists, bring it up cleanly.
   if (unitImportWindow && !unitImportWindow.isDestroyed()) {
     if (unitImportWindow.isMinimized()) unitImportWindow.restore();
     unitImportWindow.show();
+    unitImportWindow.moveTop();
     unitImportWindow.focus();
+    sendCrosshairToDcs(true);
     return;
   }
 
@@ -101,9 +118,14 @@ unitImportWindow.setVisibleOnAllWorkspaces(true);
 unitImportWindow.on("show", () => {
   unitImportWindow.moveTop();
   unitImportWindow.focus();
+  sendCrosshairToDcs(true);
 });
 
   unitImportWindow.setSkipTaskbar(false);
+
+  unitImportWindow.on("hide", () => {
+    sendCrosshairToDcs(false);
+  });
 
   // Do NOT force always-on-top here; it causes “snaps behind DCS / can’t alt-tab back” loops.
   // If you still want it slightly above your own app only, you can uncomment this:
@@ -125,10 +147,19 @@ unitImportWindow.on("show", () => {
 });
 
   // Persist bounds
-  unitImportWindow.on("close", () => {
+  unitImportWindow.on("close", (e) => {
+    // Persist bounds
     try {
       winStore.set("unitImportBounds", unitImportWindow.getBounds());
     } catch {}
+
+    // Hide instead of destroying so the last snapshot/state is preserved.
+    // Allow real close when the app is quitting.
+    if (!isQuitting) {
+      e.preventDefault();
+      unitImportWindow.hide();
+      sendCrosshairToDcs(false);
+    }
   });
 
   unitImportWindow.on("closed", () => {
@@ -139,19 +170,7 @@ unitImportWindow.on("show", () => {
   } catch {}
 
   // Send to DCS: hide DCS crosshair
-  try {
-    // direct TCP message to DCS via existing channel
-    const { ipcMain } = require("electron");
-    // We can't call ipcMain here; just send through the existing TCP sender by emitting the same IPC
-    // BUT we are in main process already, so just do this:
-    const net = require("net");
-    const client = new net.Socket();
-    client.connect(42070, "127.0.0.1", function () {
-      client.write(JSON.stringify({ type: "crosshair", payload: "false" }) + "\n");
-      client.end();
-    });
-    client.on("error", () => {});
-  } catch {}
+  sendCrosshairToDcs(false);
 
   unitImportWindow = null;
 });
@@ -166,6 +185,10 @@ if (!isTheOnlyInstance) {
       mainWindow.show();
       mainWindow.focus();
     }
+  });
+
+  app.on("before-quit", () => {
+    isQuitting = true;
   });
 
   app.whenReady().then(() => {
@@ -202,7 +225,8 @@ if (!isTheOnlyInstance) {
 
     ipcMain.on("unitImport:close", () => {
       if (unitImportWindow && !unitImportWindow.isDestroyed()) {
-        unitImportWindow.close();
+        unitImportWindow.hide();
+        sendCrosshairToDcs(false);
       }
     });
 
@@ -211,7 +235,10 @@ if (!isTheOnlyInstance) {
     });
 
     ipcMain.on("closeUnitImport", () => {
-      if (unitImportWindow && !unitImportWindow.isDestroyed()) unitImportWindow.close();
+      if (unitImportWindow && !unitImportWindow.isDestroyed()) {
+        unitImportWindow.hide();
+        sendCrosshairToDcs(false);
+      }
     });
 
     function applyElectronPreferences(preferences) {
