@@ -20,9 +20,9 @@ const iconButtonSx = {
 };
 
 const TitleBar = ({ openSettingsHandler }) => {
-  const minimizeHandler = () => {
-    ipcRenderer.send("minimize");
-  };
+  const minimizeHandler = (e) => {
+  ipcRenderer.send("minimize", { shift: e.shiftKey }); //ipcRenderer.send("minimize", { shift: !e.shiftKey });
+};
 
   const closeHandler = () => {
     ipcRenderer.send("close");
@@ -37,11 +37,11 @@ const TitleBar = ({ openSettingsHandler }) => {
           </IconButton>
         </Tooltip>
 
-        <Tooltip title="Minimize" enterNextDelay={100}>
-          <IconButton onClick={minimizeHandler} sx={iconButtonSx}>
-            <MinimizeIcon />
-          </IconButton>
-        </Tooltip>
+        <Tooltip title="Hide (Shift: collapse)" enterNextDelay={100}>
+  <IconButton onClick={minimizeHandler} sx={iconButtonSx}>
+    <MinimizeIcon />
+  </IconButton>
+</Tooltip>
 
         <Tooltip title="Close" enterNextDelay={100}>
           <IconButton onClick={closeHandler} sx={iconButtonSx}>
