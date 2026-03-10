@@ -50,7 +50,8 @@ const convert = (dcsWaypoints, module) => {
       return waypoints;
     }
     case "AH-64D_BLK_II":
-    case "UH-60L": {
+    case "UH-60L":
+    case "UH-60L_DAP": {
       // lat  00.00.00 DMM
       //long 000.00.00
       let waypoints = [];

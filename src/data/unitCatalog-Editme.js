@@ -1029,7 +1029,8 @@ export const UNIT_CATALOG = [
           "SH-60B",
           "UH-1H",
           "UH-60A",
-          "UH-60L"
+          "UH-60L",
+          "UH-60L_DAP"
         ]
       }
     ]
