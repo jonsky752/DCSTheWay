@@ -36,13 +36,13 @@ Multiplayer is supported as long as the server has Player Exports turned on (mos
   pcall(function() local TheWayLfs=require('lfs');dofile(TheWayLfs.writedir()..'Scripts/TheWay/TheWay.lua'); end)
   ```
    If there is no `Export.lua` file already existing there, create it yourself, and it should include only the line above.
+   **Put this before the SRS pcall function if you are having issues running both. (SRS last in Export.lua)
 
 4. In the end, the folder structure should look like this:
  <img width="598" alt="folderStructure" src="https://github.com/aronCiucu/DCSTheWay/assets/45103765/567f33de-e6e5-4568-8026-30c3f39f62f7">
    
 5. Run the installer from the zip file you've previously extracted.
 6. After installation, the program will launch, and you can go fly! You can find a shortcut to TheWay on your desktop.
-THE WAY WILL NOT CONNECT TO DCS UNTIL YOU ARE IN THE COCKPIT OF YOUR CHOSEN MODULE
 
 If you are updating from an older version, simply download the newest release, rerun the installer and replace your existing `TheWay` folder in Saved Games with the new one.
 
@@ -57,7 +57,7 @@ Make sure you have downloaded the program from the Releases section, and not the
 ### How do I use this for VR?
 You can use the DCS 2D Mirror that you see on your desktop to interact with TheWay and DCS.
 Or you can use the VR keybinds that can be adjusted in settings. 
-### I do not anything other than "Enter cockpit to start" error!
+### I do not anything other than "Enter cockpit to connect" error!
 THE WAY WILL NOT CONNECT TO DCS UNTIL YOU ARE IN THE COCKPIT OF YOUR CHOSEN MODULE.
 Make sure you have followed the installation instructions to the letter, and that every file is where it should be.
 Check if the server you are flying on has Player Exports turned on. If it doesn't, this won't work! 
