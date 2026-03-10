@@ -230,7 +230,7 @@ const askUserAboutSeat = async (module, userPreferences) => {
   }
 
   // UH-60L///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  else if (module === "UH-60L") {
+  else if (module === "UH-60L" || module === "UH-60L_DAP") {
     if (moduleSpecificPreferences?.includes("Hide")) return "UH-60L";
     return AlertDialog({
       title: "Be advised:",

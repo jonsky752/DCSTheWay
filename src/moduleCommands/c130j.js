@@ -311,6 +311,55 @@ for (let j = 0; j < elev.length; j++) {
       addDepress: "true",
     });
 
+    // Re-Activate WP trans
+    this.#codesPayload.push({
+      device: device,
+      code: this.#kuKeycodes["R6"],
+      delay: this.#delay100,
+      activate: 1,
+      addDepress: "true",
+    });
+
+    this.#codesPayload.push({
+      device: device,
+      code: this.#kuKeycodes["R5"],
+      delay: this.#delay100,
+      activate: 1,
+      addDepress: "true",
+    });
+
+    this.#codesPayload.push({
+      device: device,
+      code: this.#kuKeycodes["R5"],
+      delay: this.#delay100,
+      activate: 1,
+      addDepress: "true",
+    });
+
+    this.#codesPayload.push({
+      device: device,
+      code: this.#kuKeycodes["R5"],
+      delay: this.#delay100,
+      activate: 1,
+      addDepress: "true",
+    });
+
+        this.#codesPayload.push({
+      device: device,
+      code: this.#kuKeycodes["EXEC"],
+      delay: this.#delay100,
+      activate: 1,
+      addDepress: "true",
+    });
+
+    this.#codesPayload.push({
+      device: device,
+      code: this.#kuKeycodes["L6"],
+      delay: this.#delay100,
+      activate: 1,
+      addDepress: "true",
+    });
+
     // CLEAR CNI MESSAGES
     this.#codesPayload.push({
       device: device,
