@@ -1,18 +1,6 @@
 import { Stack, Typography } from "@mui/material";
 import "./Banner.css";
 
-const titleOutlineSx = {
-  fontWeight: 750,
-  "& span, &": {
-    filter: `
-      drop-shadow(-1px 0 0 rgba(0,0,0,0.9))
-      drop-shadow(1px 0 0 rgba(0,0,0,0.9))
-      drop-shadow(0 -1px 0 rgba(0,0,0,0.9))
-      drop-shadow(0 1px 0 rgba(0,0,0,0.9))
-    `,
-  },
-};
-
 const Banner = (props) => {
   return (
     <>
@@ -20,27 +8,35 @@ const Banner = (props) => {
         className="overlay-text-container"
         sx={{ paddingLeft: 1, paddingTop: 0 }}
       >
-        <Typography variant="overline" sx={titleOutlineSx}>
+        <Typography
+          variant="overline"
+          sx={{
+            fontWeight: 750,
+            textShadow:
+              "2px 2px 4px rgba(0, 0, 0, 0.25), -2px -2px 4px rgba(0, 0, 0, 0.25)",
+          }}
+        >
           TheWay V{process.env.REACT_APP_VERSION}
         </Typography>
 
+
         <Typography
           color="lightgrey"
-          variant="body2"
+          variant="overline"
           sx={{
             lineHeight: "normal",
-            filter: `
-              drop-shadow(-1px 0 0 rgba(0,0,0,0.9))
-              drop-shadow(1px 0 0 rgba(0,0,0,0.9))
-              drop-shadow(0 -1px 0 rgba(0,0,0,0.9))
-              drop-shadow(0 1px 0 rgba(0,0,0,0.9))
-            `,
+            textShadow: `
+      -1px -2px 0 #000,
+       1px -2px 0 #000,
+      -1px  2px 0 #000,
+       1px  2px 0 #000,
+       0  0  4px rgba(0,0,0,0.8)
+    `,
           }}
         >
           {props.text}
         </Typography>
       </Stack>
-
       <img
         alt="module-image"
         className="image-container"

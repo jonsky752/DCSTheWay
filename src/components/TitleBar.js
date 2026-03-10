@@ -6,24 +6,10 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import "./TitleBar.css";
 
 const { ipcRenderer } = window.require("electron");
-
-const iconButtonSx = {
-  color: "white",
-  "& svg": {
-    filter: `
-      drop-shadow(-1px 0 0 rgba(0,0,0,0.9))
-      drop-shadow(1px 0 0 rgba(0,0,0,0.9))
-      drop-shadow(0 -1px 0 rgba(0,0,0,0.9))
-      drop-shadow(0 1px 0 rgba(0,0,0,0.9))
-    `,
-  },
-};
-
 const TitleBar = ({ openSettingsHandler }) => {
   const minimizeHandler = () => {
     ipcRenderer.send("minimize");
   };
-
   const closeHandler = () => {
     ipcRenderer.send("close");
   };
@@ -32,19 +18,17 @@ const TitleBar = ({ openSettingsHandler }) => {
     <Box className="parent">
       <Box className="buttons">
         <Tooltip title="Settings" enterNextDelay={100}>
-          <IconButton onClick={openSettingsHandler} sx={iconButtonSx}>
+          <IconButton onClick={openSettingsHandler}>
             <SettingsIcon />
           </IconButton>
         </Tooltip>
-
         <Tooltip title="Minimize" enterNextDelay={100}>
-          <IconButton onClick={minimizeHandler} sx={iconButtonSx}>
+          <IconButton onClick={minimizeHandler}>
             <MinimizeIcon />
           </IconButton>
         </Tooltip>
-
         <Tooltip title="Close" enterNextDelay={100}>
-          <IconButton onClick={closeHandler} sx={iconButtonSx}>
+          <IconButton onClick={closeHandler}>
             <CloseIcon />
           </IconButton>
         </Tooltip>
