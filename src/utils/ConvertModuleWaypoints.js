@@ -13,6 +13,9 @@ const convert = (dcsWaypoints, module) => {
     case "F-16I":
     case "A-10C_2":
     case "A-10C":
+    case "AH-6J":
+    case "MH-6J":
+    case "A-10C":
     case "Hercules":
     case "M-2000C":
     case "AV8BNA": 

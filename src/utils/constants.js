@@ -31,5 +31,7 @@ export const supportedModules = [
   "SA342L",
   "SA342M",
   "SA342Minigun",
-  "C-130J-30"
+  "C-130J-30",
+  "AH-6J",
+  "MH-6J"
 ];
