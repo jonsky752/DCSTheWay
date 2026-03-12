@@ -1,4 +1,5 @@
 import a10 from "./a10";
+import ah6j from "./ah6j";
 import ah64 from "./ah64";
 import av8b from "./av8b";
 import c130j from "./c130j";
@@ -31,6 +32,12 @@ export default function getModuleCommands(module, waypoints, buttonExtraDelay) {
       a10.slotVariant = module;
       a10.extraDelay = 0;
       commands = a10.createButtonCommands(waypoints);
+      break;
+
+    case "AH-6J":
+    case "MH-6J":
+      ah6j.extraDelay = 0;
+      commands = ah6j.createButtonCommands(waypoints);
       break;
 
     case "AH-64D_BLK_IIgunner":
