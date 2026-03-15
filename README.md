@@ -9,20 +9,24 @@ You can also share those waypoints with your friends, and you will all fly the s
 ## What is supported?
 Supported modules:
 * A-10C and A-10C2
-* AH-64D Apache (Pilot and CP/G)
+* AH-64D Apache
 * AV8BNA Harrier
 * CH-47F Chinook
 * C-130J-30
 * F-15E
 * F-16 (& All IDF Mods Project F16s)
 * F/A-18C (& Superbug FA-18E/F/G) 
-* Hercules - Mod Aircraft (Requires patch available at https://github.com/Summit60/DCS-Hercules-TheWay-patch)
 * Ka-50 Blackshark
 * Mirage 2000
 * Mirage F1EE
 * OH-58D Kiowa Warrior
 * SA342 Gazelle
-* UH-60L Blackhawk - Mod Aircraft
+
+## Supported User Mod Aircraft 
+* Ah-6J/MH-6J LittleBird (patch for v1.1  https://forum.dcs.world/applications/core/interface/file/attachment.php?id=478352&key=dfe2cb0d24aed1c7a921883df4abde06 )
+* Hercules - Mod Aircraft (Requires patch available at https://github.com/Summit60/DCS-Hercules-TheWay-patch)
+* UH-60L (+DAP) Blackhawk
+
 
  
 Multiplayer is supported as long as the server has Player Exports turned on (most servers do).
