@@ -34,10 +34,13 @@ export default function getModuleCommands(module, waypoints, buttonExtraDelay) {
       commands = a10.createButtonCommands(waypoints);
       break;
 
-    case "AH-6J":
-    case "MH-6J":
+    case "AH-6J_ADD":
+    case "AH-6J_REPLACE":
+    case "MH-6J_ADD":
+    case "MH-6J_REPLACE":
+      ah6j.slotVariant = module;
       ah6j.extraDelay = 0;
-      commands = ah6j.createButtonCommands(waypoints);
+      commands = [];
       break;
 
     case "AH-64D_BLK_IIgunner":

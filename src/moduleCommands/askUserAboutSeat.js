@@ -19,6 +19,20 @@ const askUserAboutSeat = async (module, userPreferences) => {
     return option === "Add Waypoints" ? "a10ADD" : "a10NEW";
   }
 
+  // AH-6J / MH-6J////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  else if (module === "AH-6J" || module === "MH-6J") {
+    if (moduleSpecificPreferences?.includes("Add Waypoints")) return `${module}_ADD`;
+    if (moduleSpecificPreferences?.includes("Replace Waypoints")) return `${module}_REPLACE`;
+
+    const option = await FourOptionsDialog({
+      title: "Would you like to?",
+      op1: "Add Waypoints",
+      op2: "Replace Waypoints",
+    });
+
+    return option === "Replace Waypoints" ? `${module}_REPLACE` : `${module}_ADD`;
+  }
+
   // AH-64D////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   else if (module === "AH-64D_BLK_II") {
     if (moduleSpecificPreferences?.includes("Pilot")) return "AH-64D_BLK_IIpilot";

@@ -46,12 +46,24 @@ const useElectronIpcListeners = () => {
 
   useEffect(() => {
     ipcRenderer.send("getPreferences");
+
     ipcRenderer.on(
-      "dataReceived",
-      throttle((event, msg) => {
-        dispatch(dcsPointActions.changeCoords(JSON.parse(msg)));
-      }, 100),
-    );
+  "dataReceived",
+  throttle((event, msg) => {
+
+    const data = JSON.parse(msg);
+
+    // normal aircraft state update
+    dispatch(dcsPointActions.changeCoords(data));
+
+    // capture TNL3100 display rows if present
+    if (data?.HandleData) {
+      window.tnl3100Row1 = data.HandleData.TNL3100_ROW1;
+      window.tnl3100Row2 = data.HandleData.TNL3100_ROW2;
+    }
+
+  }, 100),
+);
 
     return () => {
       ipcRenderer.removeAllListeners("dataReceived");
