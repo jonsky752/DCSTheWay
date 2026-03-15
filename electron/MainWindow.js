@@ -18,7 +18,7 @@ class MainWindow extends BrowserWindow {
       resizable: false,
       transparent: true,
       frame: false,
-      focusable: false,
+      focusable: true,
     });
 
     this.setMenu(null);
