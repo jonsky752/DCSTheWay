@@ -22,7 +22,7 @@ Supported modules:
 * OH-58D Kiowa Warrior
 * SA342 Gazelle
 
-# Supported User Mod Aircraft 
+### Supported User Mod Aircraft 
 * Ah-6J/MH-6J LittleBird (patch for v1.1  https://forum.dcs.world/applications/core/interface/file/attachment.php?id=478352&key=dfe2cb0d24aed1c7a921883df4abde06 )
 * Hercules - Mod Aircraft (Requires patch available at https://github.com/Summit60/DCS-Hercules-TheWay-patch)
 * UH-60L (+DAP) Blackhawk
