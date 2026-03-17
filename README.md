@@ -9,20 +9,26 @@ You can also share those waypoints with your friends, and you will all fly the s
 ## What is supported?
 Supported modules:
 * A-10C and A-10C2
-* AH-64D Apache (Pilot and CP/G)
+* AH-64D Apache
 * AV8BNA Harrier
 * CH-47F Chinook
 * C-130J-30
 * F-15E
 * F-16 (& All IDF Mods Project F16s)
 * F/A-18C (& Superbug FA-18E/F/G) 
-* Hercules - Mod Aircraft (Requires patch available at https://github.com/Summit60/DCS-Hercules-TheWay-patch)
 * Ka-50 Blackshark
 * Mirage 2000
 * Mirage F1EE
 * OH-58D Kiowa Warrior
 * SA342 Gazelle
-* UH-60L Blackhawk - Mod Aircraft
+
+* NS430 GPS
+
+Supported Mod modules:
+* Ah-6J/MH-6J LittleBird (patch for v1.1  https://forum.dcs.world/applications/core/interface/file/attachment.php?id=478352&key=dfe2cb0d24aed1c7a921883df4abde06 )
+* Hercules - Mod Aircraft (Requires patch available at https://github.com/Summit60/DCS-Hercules-TheWay-patch)
+* UH-60L (+DAP) Blackhawk
+
 
  
 Multiplayer is supported as long as the server has Player Exports turned on (most servers do).
@@ -36,13 +42,13 @@ Multiplayer is supported as long as the server has Player Exports turned on (mos
   pcall(function() local TheWayLfs=require('lfs');dofile(TheWayLfs.writedir()..'Scripts/TheWay/TheWay.lua'); end)
   ```
    If there is no `Export.lua` file already existing there, create it yourself, and it should include only the line above.
-   **Put this before the SRS pcall function if you are having issues running both. (SRS last in Export.lua)
 
 4. In the end, the folder structure should look like this:
  <img width="598" alt="folderStructure" src="https://github.com/aronCiucu/DCSTheWay/assets/45103765/567f33de-e6e5-4568-8026-30c3f39f62f7">
    
 5. Run the installer from the zip file you've previously extracted.
 6. After installation, the program will launch, and you can go fly! You can find a shortcut to TheWay on your desktop.
+THE WAY WILL NOT CONNECT TO DCS UNTIL YOU ARE IN THE COCKPIT OF YOUR CHOSEN MODULE
 
 If you are updating from an older version, simply download the newest release, rerun the installer and replace your existing `TheWay` folder in Saved Games with the new one.
 
@@ -57,7 +63,7 @@ Make sure you have downloaded the program from the Releases section, and not the
 ### How do I use this for VR?
 You can use the DCS 2D Mirror that you see on your desktop to interact with TheWay and DCS.
 Or you can use the VR keybinds that can be adjusted in settings. 
-### I do not anything other than "Enter cockpit to connect" error!
+### I do not anything other than "Enter cockpit to start" error!
 THE WAY WILL NOT CONNECT TO DCS UNTIL YOU ARE IN THE COCKPIT OF YOUR CHOSEN MODULE.
 Make sure you have followed the installation instructions to the letter, and that every file is where it should be.
 Check if the server you are flying on has Player Exports turned on. If it doesn't, this won't work! 
@@ -73,14 +79,18 @@ If that still doesn't fix the issue, open an issue on GitHub and attach a video 
 Worry not, feel free to issue a message request on Discord (Doge4634), and we'll have it sorted!
 
 ## Credits
-Special thanks to discord users: kukiric, Bepis, the88tench, okopanja, and the ED Forums users for their suggestions and help.
+Special thanks to **aronCiucu** for creating the original app.  
+The ED Forums users for their suggestions and help.  
 Thanks to our GitHub contributors for supporting new modules. 
-Images provided by:
-* F15E, F/A-18C: Coffee :coffee:
-* IDF F16s, Superbug F18s: Hayds_93
 
 ## For nerds
-The application is built using React.js and Electron. If you'd like to contribute, simply clone the repository and run `npm install`, then `npm run react-start` to start the React page, and `npm run electron-dev` to fire up the Electron side of things.
-If you'd like to build/package the code for production, run `npm run package` and check the `dist` folder for the created installer. 
+The application is built using React.js and Electron. 
+
+If you'd like to contribute,   
+* simply clone the repository 
+* Open the folder in Visual Studio
+* In a **New Terminal** run **`npm install`** *(first run only, downloads and install the required electron and react files)*,
+* Open another **New Terminal** and run **`npm run dev`** to start the app in Developer mode,
+* If you'd like to build/package the code for production, run **`npm run package`** and check the **`dist`** folder for the created installer. 
 
 This is the way.
