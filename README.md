@@ -79,8 +79,8 @@ If that still doesn't fix the issue, open an issue on GitHub and attach a video 
 Worry not, feel free to issue a message request on Discord (Doge4634), and we'll have it sorted!
 
 ## Credits
-Special thanks to **aronCiucu** for creating the original app. 
-The ED Forums users for their suggestions and help.
+Special thanks to **aronCiucu** for creating the original app.  
+The ED Forums users for their suggestions and help.  
 Thanks to our GitHub contributors for supporting new modules. 
 
 ## For nerds
