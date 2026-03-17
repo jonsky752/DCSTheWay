@@ -22,6 +22,8 @@ Supported modules:
 * OH-58D Kiowa Warrior
 * SA342 Gazelle
 
+* NS430 GPS
+
 Supported Mod modules:
 * Ah-6J/MH-6J LittleBird (patch for v1.1  https://forum.dcs.world/applications/core/interface/file/attachment.php?id=478352&key=dfe2cb0d24aed1c7a921883df4abde06 )
 * Hercules - Mod Aircraft (Requires patch available at https://github.com/Summit60/DCS-Hercules-TheWay-patch)
@@ -84,7 +86,9 @@ Images provided by:
 * IDF F16s, Superbug F18s: Hayds_93
 
 ## For nerds
-The application is built using React.js and Electron. If you'd like to contribute, simply clone the repository and run `npm install`, then `npm run react-start` to start the React page, and `npm run electron-dev` to fire up the Electron side of things.
+The application is built using React.js and Electron. 
+
+If you'd like to contribute, simply clone the repository and run `npm install`, then `npm run dev` to start the React page, and fire up the Electron side of things.
 If you'd like to build/package the code for production, run `npm run package` and check the `dist` folder for the created installer. 
 
 This is the way.
