@@ -1,4 +1,4 @@
-log.write("THEWAY", log.INFO, "Initializing V2.6.0")
+log.write("THEWAY", log.INFO, "Initializing V3.0.0")
 
 local tcpServer                        = nil
 local udpSpeaker                       = nil
