@@ -79,11 +79,9 @@ If that still doesn't fix the issue, open an issue on GitHub and attach a video 
 Worry not, feel free to issue a message request on Discord (Doge4634), and we'll have it sorted!
 
 ## Credits
-Special thanks to discord users: kukiric, Bepis, the88tench, okopanja, and the ED Forums users for their suggestions and help.
+Special thanks to **aronCiucu** for creating the original app. 
+The ED Forums users for their suggestions and help.
 Thanks to our GitHub contributors for supporting new modules. 
-Images provided by:
-* F15E, F/A-18C: Coffee :coffee:
-* IDF F16s, Superbug F18s: Hayds_93
 
 ## For nerds
 The application is built using React.js and Electron. 
