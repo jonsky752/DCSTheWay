@@ -88,7 +88,7 @@ Images provided by:
 ## For nerds
 The application is built using React.js and Electron. 
 
-If you'd like to contribute, simply clone the repository and run `npm install`, then `npm run dev` to start the React page, and fire up the Electron side of things.
+If you'd like to contribute,   simply clone the repository and run `npm install`, then `npm run dev` to start the React page, and fire up the Electron side of things.
 If you'd like to build/package the code for production, run `npm run package` and check the `dist` folder for the created installer. 
 
 This is the way.
