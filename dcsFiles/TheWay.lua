@@ -1,4 +1,4 @@
-log.write("THEWAY", log.INFO, "Initializing V2.4.2")
+log.write("THEWAY", log.INFO, "Initializing V2.6.0")
 
 local tcpServer                        = nil
 local udpSpeaker                       = nil
@@ -83,6 +83,73 @@ local function safe_json_encode(t)
     local ok, res = pcall(function() return JSON:encode(t) end)
     if ok then return res end
     return nil
+end
+
+-- Generic cockpit-data helpers -----------------------------------------------
+local function get_list_indicator_value(indicator_id)
+    local list_indicator = list_indication(indicator_id)
+	----------------------------------------------------------------------------------------------------------------------------
+	if li then
+        log.write("THEWAY_NS430", log.INFO, "Indicator "..indicator_id.." -> "..tostring(li))
+    end
+	------------------------------------------------------------------------------------------------------------------------------
+    local display_data = {}
+
+    if list_indicator == nil or list_indicator == "" then
+        return nil
+    end
+
+    local delim = "-----------------------------------------"
+    local line_no = 0
+    local key = ""
+    local val = ""
+
+    for line in list_indicator:gmatch("[^\n]+") do
+        if line == delim then
+            if key ~= "" then
+                display_data[key] = val
+            end
+            key = ""
+            val = ""
+            line_no = 0
+        end
+
+        if line_no == 1 then
+            key = line
+        elseif line_no == 2 then
+            if line ~= "children are {" and line ~= "}" then
+                val = line
+            end
+        elseif line_no > 2 then
+            if line ~= "children are {" and line ~= "}" then
+                val = val .. "\n" .. line
+            end
+        end
+
+        line_no = line_no + 1
+    end
+
+    if key ~= "" then
+        display_data[key] = val
+    end
+
+    return display_data
+end
+
+local function send_tcp_response(client, response)
+    local encoded = safe_json_encode(response or {})
+    if not encoded then
+        encoded = '{"ok":false,"error":"JSON encode failed"}'
+    end
+
+    local ok, err = pcall(function()
+        client:send(encoded .. "\n")
+        client:close()
+    end)
+
+    if not ok then
+        log.write("THEWAY", log.ERROR, "TCP send failed: " .. tostring(err))
+    end
 end
 
 -- Origin for distance tests in Lo coordinates
@@ -423,12 +490,101 @@ function checkSocket()
             local decodedData = safe_json_decode(data)
             if decodedData == nil then
                 log.write("THEWAY", log.ERROR, "TCP JSON decode failed: " .. tostring(data))
+                send_tcp_response(client, {
+                    ok = false,
+                    error = "TCP JSON decode failed"
+                })
                 return
             end
 
             -- Debug: log what we received (cmd/type)
             if decodedData["cmd"] ~= nil or decodedData["type"] ~= nil then
                 log.write("THEWAY", log.INFO, "TCP received cmd=" .. tostring(decodedData["cmd"]) .. " type=" .. tostring(decodedData["type"]))
+            end
+
+            -- Generic request / response API
+            if decodedData["cmd"] == "GET_PARAM_HANDLES" or
+               decodedData["cmd"] == "GET_COCKPIT_DISPLAYS" or
+               decodedData["cmd"] == "GET_EXPORT_DATA" or
+               decodedData["cmd"] == "GET_OWN_POSITION" then
+
+                local response = {
+                    ok = true,
+                    HandleData = {},
+                    CockpitDisplayData = {},
+                    OwnPosition = {},
+                    ErrorList = {}
+                }
+
+                local handle_names = nil
+                local display_ids = nil
+
+                if decodedData["cmd"] == "GET_EXPORT_DATA" then
+                    handle_names = decodedData["handles"] or decodedData["GetHandleData"]
+                    display_ids = decodedData["displays"] or decodedData["GetCockpitDisplayData"]
+                elseif decodedData["cmd"] == "GET_PARAM_HANDLES" then
+                    handle_names = decodedData["handles"] or decodedData["GetHandleData"]
+                elseif decodedData["cmd"] == "GET_COCKPIT_DISPLAYS" then
+                    display_ids = decodedData["displays"] or decodedData["GetCockpitDisplayData"]
+                elseif decodedData["cmd"] == "GET_OWN_POSITION" then
+                    local ok_pos, err_pos = pcall(function()
+                        local selfData = LoGetSelfData and LoGetSelfData() or nil
+                        if selfData and selfData.LatLongAlt then
+                            response["OwnPosition"]["lat"] = tostring(selfData.LatLongAlt.Lat)
+                            response["OwnPosition"]["long"] = tostring(selfData.LatLongAlt.Long)
+                            response["OwnPosition"]["alt"] = tostring(selfData.LatLongAlt.Alt or 0)
+                            response["OwnPosition"]["model"] = tostring(selfData.Name or "Unknown")
+                        else
+                            response["ok"] = false
+                            table.insert(response["ErrorList"], "LoGetSelfData().LatLongAlt unavailable")
+                        end
+                    end)
+
+                    if not ok_pos then
+                        response["ok"] = false
+                        table.insert(response["ErrorList"], tostring(err_pos))
+                        log.write("THEWAY", log.ERROR, "Failure to get own position: " .. tostring(err_pos))
+                    end
+                end
+
+                if handle_names then
+                    local ok_handles, err_handles = pcall(function()
+                        for _, handle_name in pairs(handle_names) do
+                            local handle = get_param_handle(handle_name)
+                            if handle then
+                                response["HandleData"][handle_name] = tostring(handle:get())
+                            else
+                                response["HandleData"][handle_name] = nil
+                            end
+                        end
+                    end)
+
+                    if not ok_handles then
+                        response["ok"] = false
+                        table.insert(response["ErrorList"], tostring(err_handles))
+                        log.write("THEWAY", log.ERROR, "Failure to get handle data: " .. tostring(err_handles))
+                    end
+                end
+
+                if display_ids then
+                    local ok_displays, err_displays = pcall(function()
+                        for _, display_id in pairs(display_ids) do
+                            local display_data = get_list_indicator_value(display_id)
+                            if display_data then
+                                response["CockpitDisplayData"][tostring(display_id)] = display_data
+                            end
+                        end
+                    end)
+
+                    if not ok_displays then
+                        response["ok"] = false
+                        table.insert(response["ErrorList"], tostring(err_displays))
+                        log.write("THEWAY", log.ERROR, "Failure to get cockpit display data: " .. tostring(err_displays))
+                    end
+                end
+
+                send_tcp_response(client, response)
+                return
             end
 
             -- Intelligence snapshot request: accept both formats
@@ -459,6 +615,10 @@ function checkSocket()
                 currCommandIndex = 1
             end
         end
+
+        pcall(function()
+            client:close()
+        end)
     end
 end
 
