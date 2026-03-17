@@ -31,16 +31,14 @@ let fileHandler;
 let udpSender;
 let userPreferenceHandler;
 
-let restoreWindow; // Alt-Tab/taskbar restore stub
-let pillWindow; // 28x28 icon-only restore overlay
+let restoreWindow;
+let pillWindow;
 let tray;
 
 let suppressRestoreFocus = false;
-
 let isQuitting = false;
 
 const winStore = new Store({ name: "window-state" });
-
 const ICON_ICO = path.join(__dirname, "../public/TheWayIcon.ico");
 
 function buildAppUrl(windowName) {
@@ -51,14 +49,8 @@ function buildAppUrl(windowName) {
 }
 
 function getPrimaryWorkArea() {
-  // Use workArea (excludes taskbar) so our "bottom-left" sits just above it.
   const wa = screen.getPrimaryDisplay().workArea;
   return { x: wa.x, y: wa.y, width: wa.width, height: wa.height };
-}
-
-function getMainDefaultBounds() {
-  const wa = getPrimaryWorkArea();
-  return { x: wa.x, y: wa.y + wa.height - 500, width: 300, height: 500 };
 }
 
 function getPillBounds() {
@@ -69,12 +61,10 @@ function getPillBounds() {
 function showOverlayInactive() {
   if (!mainWindow || mainWindow.isDestroyed()) return;
 
-  // Always keep overlay non-focus stealing.
   try {
     mainWindow.setFocusable(false);
   } catch {}
 
-  // Ensure it's not minimized (we don't use minimize for the overlay, but just in case)
   try {
     if (mainWindow.isMinimized()) mainWindow.restore();
   } catch {}
@@ -82,19 +72,19 @@ function showOverlayInactive() {
   try {
     mainWindow.showInactive();
   } catch {
-    // Fallback
-    mainWindow.show();
+    try {
+      mainWindow.show();
+    } catch {}
   }
 
-  // Keep it above DCS
   try {
     mainWindow.setAlwaysOnTop(true, "screen-saver");
   } catch {}
 
-  // Hide helper windows
   try {
     if (restoreWindow && !restoreWindow.isDestroyed()) restoreWindow.hide();
   } catch {}
+
   try {
     if (pillWindow && !pillWindow.isDestroyed()) pillWindow.hide();
   } catch {}
@@ -102,17 +92,17 @@ function showOverlayInactive() {
 
 function hideOverlayCompletely() {
   if (!mainWindow || mainWindow.isDestroyed()) return;
+
   try {
     mainWindow.hide();
   } catch {}
 
   ensureRestoreWindow();
-  // Make the app recoverable via Alt-Tab even in borderless fullscreen scenarios.
+
   try {
     suppressRestoreFocus = true;
 
     try {
-      // Show without stealing focus (prevents immediate restore flash)
       if (typeof restoreWindow.showInactive === "function") restoreWindow.showInactive();
       else restoreWindow.show();
       restoreWindow.minimize();
@@ -133,13 +123,13 @@ function collapseToPill() {
 
   ensurePillWindow();
   const b = getPillBounds();
+
   try {
     pillWindow.setBounds(b, false);
     pillWindow.showInactive();
     pillWindow.setAlwaysOnTop(true, "screen-saver");
   } catch {}
 
-  // When pill is present, we don't *need* Alt-Tab restore, but tray still exists.
   try {
     if (restoreWindow && !restoreWindow.isDestroyed()) restoreWindow.hide();
   } catch {}
@@ -151,7 +141,6 @@ function ensureTray() {
   try {
     tray = new Tray(ICON_ICO);
   } catch {
-    // Fallback: create a blank image if icon fails (rare)
     tray = new Tray(nativeImage.createEmpty());
   }
 
@@ -195,7 +184,6 @@ function ensureRestoreWindow() {
     },
   });
 
-  // Keep content lightweight; the window is only a restore target.
   const html = `
 <!doctype html>
 <html>
@@ -207,23 +195,17 @@ function ensureRestoreWindow() {
 </html>`;
   restoreWindow.loadURL("data:text/html;charset=utf-8," + encodeURIComponent(html));
 
-  // When the user Alt-Tabs to it (or clicks it), restore the overlay and get out of the way.
   const restore = () => {
     if (suppressRestoreFocus) return;
     showOverlayInactive();
-    // Let Windows settle focus changes, then hide this helper.
     setTimeout(() => {
       try {
-        restoreWindow && !restoreWindow.isDestroyed() && restoreWindow.hide();
+        if (restoreWindow && !restoreWindow.isDestroyed()) restoreWindow.hide();
       } catch {}
     }, 50);
   };
 
   restoreWindow.on("focus", restore);
-  restoreWindow.on("show", () => {
-    // Don't steal focus unnecessarily; if shown from our code we immediately minimize anyway.
-  });
-
   restoreWindow.on("closed", () => {
     restoreWindow = null;
   });
@@ -232,7 +214,6 @@ function ensureRestoreWindow() {
 function ensurePillWindow() {
   if (pillWindow && !pillWindow.isDestroyed()) return;
 
-  // Convert ICO -> 28x28 PNG data URL for reliable transparency in renderer.
   let iconDataUrl = "";
   try {
     const img = nativeImage.createFromPath(ICON_ICO).resize({ width: 28, height: 28 });
@@ -276,7 +257,6 @@ function ensurePillWindow() {
 </html>`;
   pillWindow.loadURL("data:text/html;charset=utf-8," + encodeURIComponent(html));
 
-  // Keep it above everything; do not take focus.
   pillWindow.on("show", () => {
     try {
       pillWindow.setAlwaysOnTop(true, "screen-saver");
@@ -292,7 +272,6 @@ function ensurePillWindow() {
 async function createWindow() {
   mainWindow = new MainWindow();
 
-  // Force taskbar identity (helps Windows show/recall your app properly)
   if (process.platform === "win32") {
     try {
       app.setAppUserModelId("com.theway.app");
@@ -307,7 +286,6 @@ async function createWindow() {
 
   mainWindow.loadURL(buildAppUrl(null));
 
-  // Overlay should not be a normal taskbar window; restore window handles Alt-Tab when hidden.
   try {
     mainWindow.setSkipTaskbar(true);
   } catch {}
@@ -316,14 +294,12 @@ async function createWindow() {
 }
 
 function sendCrosshairToDcs(enabled) {
-  // Fire-and-forget. Uses same TCP port as your existing crosshair logic.
   try {
     const net = require("net");
     const client = new net.Socket();
     client.connect(42070, "127.0.0.1", function () {
       client.write(
-        JSON.stringify({ type: "crosshair", payload: enabled ? "true" : "false" }) +
-          "\n",
+        JSON.stringify({ type: "crosshair", payload: enabled ? "true" : "false" }) + "\n",
       );
       client.end();
     });
@@ -332,7 +308,6 @@ function sendCrosshairToDcs(enabled) {
 }
 
 function createOrShowUnitImport() {
-  // If it already exists, bring it up cleanly.
   if (unitImportWindow && !unitImportWindow.isDestroyed()) {
     if (unitImportWindow.isMinimized()) unitImportWindow.restore();
     unitImportWindow.show();
@@ -355,10 +330,8 @@ function createOrShowUnitImport() {
     alwaysOnTop: true,
     focusable: true,
     skipTaskbar: false,
-
     show: false,
     autoHideMenuBar: true,
-
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -366,7 +339,6 @@ function createOrShowUnitImport() {
     },
   });
 
-  // Keep Unit Import above everything (including DCS windowed)
   unitImportWindow.setAlwaysOnTop(true, "screen-saver");
   unitImportWindow.setVisibleOnAllWorkspaces(true);
 
@@ -375,8 +347,6 @@ function createOrShowUnitImport() {
     unitImportWindow.focus();
     sendCrosshairToDcs(true);
   });
-
-  unitImportWindow.setSkipTaskbar(false);
 
   unitImportWindow.on("hide", () => {
     sendCrosshairToDcs(false);
@@ -394,13 +364,11 @@ function createOrShowUnitImport() {
     unitImportWindow.focus();
   });
 
-  // Persist bounds
   unitImportWindow.on("close", (e) => {
     try {
       winStore.set("unitImportBounds", unitImportWindow.getBounds());
     } catch {}
 
-    // Hide instead of destroying so the last snapshot/state is preserved.
     if (!isQuitting) {
       e.preventDefault();
       unitImportWindow.hide();
@@ -419,9 +387,7 @@ if (!isTheOnlyInstance) {
   app.quit();
 } else {
   app.on("second-instance", () => {
-    if (mainWindow) {
-      showOverlayInactive();
-    }
+    if (mainWindow) showOverlayInactive();
   });
 
   app.on("before-quit", () => {
@@ -430,12 +396,9 @@ if (!isTheOnlyInstance) {
 
   app.whenReady().then(() => {
     createWindow();
-
     ensureTray();
 
-    // ✅ CRITICAL FIX: pass the unitImportWindow getter so UDP can forward snapshots to it
     udpListener = new UDPListener(mainWindow, () => unitImportWindow);
-
     fileHandler = new FileHandler(mainWindow);
     udpSender = new UDPSender();
     userPreferenceHandler = new UserPreferenceHandler(
@@ -443,10 +406,8 @@ if (!isTheOnlyInstance) {
       applyElectronPreferences,
     );
 
-    // -------- Overlay visibility IPC --------
     ipcMain.removeAllListeners("minimize");
     ipcMain.on("minimize", (_event, opts) => {
-      // Default: hide completely. If renderer passes { shift: true } or { mode: 'pill' }, collapse instead.
       const mode = opts?.mode;
       const shift = opts?.shift === true || opts?.shiftKey === true;
 
@@ -470,10 +431,8 @@ if (!isTheOnlyInstance) {
       } catch {}
     });
 
-    // Keep these IPC names for compatibility, but make them non-destructive:
     ipcMain.removeAllListeners("focus");
     ipcMain.on("focus", () => {
-      // Temporarily allow focusing so text inputs (waypoint name/elevation) can be edited.
       if (!mainWindow || mainWindow.isDestroyed()) return;
 
       try {
@@ -485,16 +444,15 @@ if (!isTheOnlyInstance) {
       } catch {}
 
       try {
-        mainWindow.show(); // activate
+        mainWindow.show();
       } catch {}
 
       try {
         mainWindow.focus();
       } catch {}
 
-      // Ensure renderer receives keyboard input.
       try {
-        mainWindow.webContents && mainWindow.webContents.focus();
+        if (mainWindow.webContents) mainWindow.webContents.focus();
       } catch {}
 
       try {
@@ -504,23 +462,24 @@ if (!isTheOnlyInstance) {
 
     ipcMain.removeAllListeners("defocus");
     ipcMain.on("defocus", () => {
-      // Return to overlay mode: visible but non-focus stealing.
       showOverlayInactive();
     });
 
-    // -------- Crosshair window --------
+    ipcMain.removeAllListeners("f10Start");
     ipcMain.on("f10Start", () => {
       crosshairWindow = new CrosshairWindow();
     });
 
+    ipcMain.removeAllListeners("f10Stop");
     ipcMain.on("f10Stop", () => {
       if (crosshairWindow) crosshairWindow.close();
       crosshairWindow = null;
     });
 
-    // ================= Unit Import IPC (register once) =================
     ipcMain.removeAllListeners("unitImport:addWaypoints");
     ipcMain.removeAllListeners("unitImport:close");
+    ipcMain.removeAllListeners("openUnitImport");
+    ipcMain.removeAllListeners("closeUnitImport");
 
     ipcMain.on("unitImport:addWaypoints", (_event, waypoints) => {
       if (mainWindow && mainWindow.webContents) {
