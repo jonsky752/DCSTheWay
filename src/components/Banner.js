@@ -3,6 +3,7 @@ import "./Banner.css";
 
 const titleOutlineSx = {
   fontWeight: 750,
+  textShadow: "2px 2px 4px rgba(0, 0, 0, 0.25), -2px -2px 4px rgba(0, 0, 0, 0.25)",
   "& span, &": {
     filter: `
       drop-shadow(-1px 0 0 rgba(0,0,0,0.9))
@@ -26,9 +27,16 @@ const Banner = (props) => {
 
         <Typography
           color="lightgrey"
-          variant="body2"
+          variant="overline"
           sx={{
             lineHeight: "normal",
+            textShadow: `
+              -1px -2px 0 #000,
+               1px -2px 0 #000,
+              -1px  2px 0 #000,
+               1px  2px 0 #000,
+               0  0  4px rgba(0,0,0,0.8)
+            `,
             filter: `
               drop-shadow(-1px 0 0 rgba(0,0,0,0.9))
               drop-shadow(1px 0 0 rgba(0,0,0,0.9))

@@ -11,15 +11,17 @@ import ModalContainer from "react-modal-promise";
 
 import SourceSelector from "./components/SourceSelector";
 import WaypointList from "./components/waypoints/WaypointList";
-import theWayTheme from "./theme/TheWayTheme";
 import TransferControls from "./components/TransferControls";
 import TitleBar from "./components/TitleBar";
-import ConvertModuleWaypoints from "./utils/ConvertModuleWaypoints";
-import GetModuleCommands from "./moduleCommands/GetModuleCommands";
-import askUserAboutSeat from "./moduleCommands/askUserAboutSeat";
-import useElectronIpcListeners from "./hooks/useElectronIpcListeners";
 import SettingsDialog from "./components/settings/SettingsDialog";
 import UnitImportDialog from "./components/UnitImportDialog";
+
+import theWayTheme from "./theme/TheWayTheme";
+import ConvertModuleWaypoints from "./utils/ConvertModuleWaypoints";
+import GetModuleCommands from "./moduleCommands/GetModuleCommands";
+import GetTransferCommands from "./moduleTransfers/GetTransferCommands";
+import askUserAboutSeat from "./moduleCommands/askUserAboutSeat";
+import useElectronIpcListeners from "./hooks/useElectronIpcListeners";
 import { uiActions } from "./store/ui";
 
 const { ipcRenderer } = window.require("electron");
@@ -33,72 +35,86 @@ function App() {
   const { module } = useSelector((state) => state.dcsPoint);
   const dcsWaypoints = useSelector((state) => state.waypoints.dcsWaypoints);
   const userPreferences = useSelector((state) => state.ui.userPreferences);
+
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [inputMethod, setInputMethod] = useState("F10 Map");
-const [isSelecting, setIsSelecting] = useState(false);
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [transferRunning, setTransferRunning] = useState(false);
+
   const buttonExtraDelay = userPreferences["buttonDelay"] ?? 0;
   const oldCrosshair = userPreferences["oldCrosshair"];
+
   const dispatch = useDispatch();
   useElectronIpcListeners();
 
   const handleTransfer = useCallback(async () => {
     if (!module || !dcsWaypoints.length) return;
+
     const moduleWaypoints = ConvertModuleWaypoints(dcsWaypoints, module);
     const chosenSeat = await askUserAboutSeat(module, userPreferences);
-    const commands = {
+
+    const transferModule = GetTransferCommands(chosenSeat);
+
+    if (transferModule?.runTransfer) {
+      await transferModule.runTransfer({
+        module: chosenSeat,
+        moduleWaypoints,
+        buttonExtraDelay,
+        ipcRenderer,
+        setRunning: setTransferRunning,
+      });
+      return;
+    }
+
+    ipcRenderer.send("messageToDcs", {
       type: "waypoints",
       payload: GetModuleCommands(chosenSeat, moduleWaypoints, buttonExtraDelay),
-    };
-    ipcRenderer.send("messageToDcs", commands);
-  }, [dcsWaypoints, module, userPreferences]);
+    });
 
-  const handleAbort = useCallback(async() => {
+  }, [dcsWaypoints, module, userPreferences, buttonExtraDelay]);
+
+  const handleAbort = useCallback(() => {
+    setTransferRunning(false);
+    const transferModule = GetTransferCommands(module);
+    transferModule?.requestAbort?.();
     ipcRenderer.send("messageToDcs", { type: "abort" });
-  }, []);
+  }, [module]);
 
   const handleFileSave = useCallback(() => {
     ipcRenderer.send("saveFile", JSON.stringify(dcsWaypoints));
   }, [dcsWaypoints]);
 
- const handleSelectionToggle = useCallback(() => {
-  if (!isSelecting) {
-    if (inputMethod === "F10 Map") {
-      if (oldCrosshair) {
-        ipcRenderer.send("f10Start");
-      } else {
-        ipcRenderer.send("messageToDcs", {
-          type: "crosshair",
-          payload: "true",
-        });
-      }
-      dispatch(uiActions.changePendingWaypoint(true));
-      setIsSelecting(true);
-    } else if (inputMethod === "From a file") {
-      ipcRenderer.send("openFile");
-    } else if (inputMethod === "Recon Request") {
-      ipcRenderer.send("openUnitImport");
-    }
-  } else {
-    if (inputMethod === "F10 Map") {
-      if (oldCrosshair) {
-        ipcRenderer.send("f10Stop");
-      } else {
-        ipcRenderer.send("messageToDcs", {
-          type: "crosshair",
-          payload: "false",
-        });
-      }
-      dispatch(uiActions.changePendingWaypoint(false));
-      setIsSelecting(false);
-    }
-  }
-}, [isSelecting, inputMethod, oldCrosshair]);
+  const handleSelectionToggle = useCallback(() => {
+    if (!isSelecting) {
+      if (inputMethod === "F10 Map") {
+        if (oldCrosshair) ipcRenderer.send("f10Start");
+        else ipcRenderer.send("messageToDcs", { type: "crosshair", payload: "true" });
 
+        dispatch(uiActions.changePendingWaypoint(true));
+        setIsSelecting(true);
+
+      } else if (inputMethod === "From a file") {
+        ipcRenderer.send("openFile");
+
+      } else if (inputMethod === "Recon Request") {
+        ipcRenderer.send("openUnitImport");
+      }
+    } else {
+      if (inputMethod === "F10 Map") {
+        if (oldCrosshair) ipcRenderer.send("f10Stop");
+        else ipcRenderer.send("messageToDcs", { type: "crosshair", payload: "false" });
+
+        dispatch(uiActions.changePendingWaypoint(false));
+        setIsSelecting(false);
+      }
+    }
+  }, [isSelecting, inputMethod, oldCrosshair]);
 
   useEffect(() => {
     ipcRenderer.on("transferWaypoints", handleTransfer);
     ipcRenderer.on("toggleCrosshair", handleSelectionToggle);
-  return () => {
+
+    return () => {
       ipcRenderer.removeAllListeners("transferWaypoints");
       ipcRenderer.removeAllListeners("toggleCrosshair");
     };
@@ -118,11 +134,13 @@ const [isSelecting, setIsSelecting] = useState(false);
       <CssBaseline enableColorScheme />
       <TitleBar openSettingsHandler={() => setSettingsModalOpen(true)} />
       <ModalContainer />
+
       <Box sx={{ height: "100vh" }}>
         <SettingsDialog
           open={settingsModalOpen}
           closeHandler={() => setSettingsModalOpen(false)}
         />
+
         <Box sx={{ height: "25%" }}>
           <SourceSelector
             handleSelectionToggle={handleSelectionToggle}
@@ -132,14 +150,17 @@ const [isSelecting, setIsSelecting] = useState(false);
             isSelecting={isSelecting}
           />
         </Box>
+
         <Box sx={{ height: "60%", paddingX: 2 }}>
           <WaypointList />
         </Box>
+
         <Box sx={{ height: "15%" }}>
           <TransferControls
             onTransfer={handleTransfer}
             onAbort={handleAbort}
             onSaveFile={handleFileSave}
+            busyOverride={transferRunning}
           />
         </Box>
       </Box>

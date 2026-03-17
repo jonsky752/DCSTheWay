@@ -10,7 +10,9 @@ const { ipcRenderer } = window.require("electron");
 const useElectronIpcListeners = () => {
   const dispatch = useDispatch();
   const { lat, long, elev, module } = useSelector((state) => state.dcsPoint);
-  const dcsWaypointsCount = useSelector((state) => state.waypoints.dcsWaypoints.length);
+  const dcsWaypointsCount = useSelector(
+    (state) => state.waypoints.dcsWaypoints.length,
+  );
 
   useEffect(() => {
     const onSaveWaypoint = () => {
@@ -28,9 +30,7 @@ const useElectronIpcListeners = () => {
     const onUnitImportAddWaypoints = (_event, units) => {
       if (!Array.isArray(units)) return;
 
-      // Numbering: we prefix each imported unit with the next waypoint index in your list.
-      // Example: "7 T72B"
-      const startIndex = dcsWaypointsCount; // current number of waypoints at time of import
+      const startIndex = dcsWaypointsCount;
 
       units.forEach((u, idx) => {
         const latNum = Number(u.lat);
@@ -60,7 +60,7 @@ const useElectronIpcListeners = () => {
       });
     };
 
-    const onFileOpened = (event, msg) => {
+    const onFileOpened = (_event, msg) => {
       dispatch(waypointsActions.appendWaypoints(msg));
     };
 
@@ -72,11 +72,10 @@ const useElectronIpcListeners = () => {
       dispatch(waypointsActions.deleteLast());
     };
 
-    const onPreferencesReceived = (e, preferences) => {
+    const onPreferencesReceived = (_e, preferences) => {
       dispatch(uiActions.setUserPreferences(preferences));
     };
 
-    // In dev (React 18 StrictMode / HMR), effects can mount twice — ensure we don't stack listeners.
     ipcRenderer.removeListener("saveWaypoint", onSaveWaypoint);
     ipcRenderer.removeListener("unitImport:addWaypoints", onUnitImportAddWaypoints);
     ipcRenderer.removeListener("fileOpened", onFileOpened);
@@ -99,21 +98,32 @@ const useElectronIpcListeners = () => {
       ipcRenderer.removeListener("deleteLastWaypoint", onDeleteLastWaypoint);
       ipcRenderer.removeListener("preferencesReceived", onPreferencesReceived);
     };
-  }, [lat, long, elev, module, dcsWaypointsCount]);
+  }, [lat, long, elev, module, dcsWaypointsCount, dispatch]);
 
   useEffect(() => {
     ipcRenderer.send("getPreferences");
-    ipcRenderer.on(
-      "dataReceived",
-      throttle((event, msg) => {
-        dispatch(dcsPointActions.changeCoords(JSON.parse(msg)));
-      }, 100),
-    );
+
+    const onDataReceived = throttle((_event, msg) => {
+      const data = JSON.parse(msg);
+
+      dispatch(dcsPointActions.changeCoords(data));
+
+      if (data?.HandleData) {
+        window.tnl3100Row1 = data.HandleData.TNL3100_ROW1;
+        window.tnl3100Row2 = data.HandleData.TNL3100_ROW2;
+      }
+    }, 100);
+
+    ipcRenderer.removeAllListeners("dataReceived");
+    ipcRenderer.on("dataReceived", onDataReceived);
 
     return () => {
-      ipcRenderer.removeAllListeners("dataReceived");
+      ipcRenderer.removeListener("dataReceived", onDataReceived);
+      if (typeof onDataReceived.cancel === "function") {
+        onDataReceived.cancel();
+      }
     };
-  }, []);
+  }, [dispatch]);
 };
 
 export default useElectronIpcListeners;
