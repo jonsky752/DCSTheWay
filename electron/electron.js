@@ -117,46 +117,58 @@ function hideOverlayCompletely() {
 function collapseToPill() {
   if (!mainWindow || mainWindow.isDestroyed()) return;
 
+  const wa = getPrimaryWorkArea();
+  const mainBounds = mainWindow.getBounds();
+  const pillBounds = getPillBounds();
+
+  winStore.set("mainBounds", mainBounds);
+  winStore.set("pillAnchor", {
+    offsetX: Math.max(0, mainBounds.x - wa.x),
+    offsetY: Math.max(0, wa.y + wa.height - (mainBounds.y + mainBounds.height)),
+  });
+
+  ensurePillWindow();
+
   try {
     mainWindow.hide();
   } catch {}
 
-  ensurePillWindow();
-  const b = getPillBounds();
-
   try {
-    pillWindow.setBounds(b, false);
+    pillWindow.setBounds(pillBounds);
     pillWindow.showInactive();
-    pillWindow.setAlwaysOnTop(true, "screen-saver");
-  } catch {}
-
-  try {
-    if (restoreWindow && !restoreWindow.isDestroyed()) restoreWindow.hide();
+    pillWindow.moveTop();
   } catch {}
 }
 
 function ensureTray() {
   if (tray) return;
 
+  let icon = null;
   try {
-    tray = new Tray(ICON_ICO);
+    icon = nativeImage.createFromPath(ICON_ICO);
   } catch {
-    tray = new Tray(nativeImage.createEmpty());
+    icon = null;
   }
 
+  tray = new Tray(icon);
   tray.setToolTip("TheWay");
 
-  const menu = Menu.buildFromTemplate([
-    { label: "Show TheWay", click: () => showOverlayInactive() },
-    { label: "Hide TheWay", click: () => hideOverlayCompletely() },
-    { type: "separator" },
-    { label: "Quit", click: () => app.quit() },
-  ]);
-  tray.setContextMenu(menu);
+  const buildMenu = () =>
+    Menu.buildFromTemplate([
+      { label: "Show TheWay", click: () => showOverlayInactive() },
+      { label: "Minimize to Pill", click: () => collapseToPill() },
+      {
+        label: "Quit",
+        click: () => {
+          isQuitting = true;
+          app.quit();
+        },
+      },
+    ]);
 
-  tray.on("click", () => {
-    if (!mainWindow || mainWindow.isDestroyed()) return;
-    if (mainWindow.isVisible()) hideOverlayCompletely();
+  tray.setContextMenu(buildMenu());
+  tray.on("double-click", () => {
+    if (pillWindow && !pillWindow.isDestroyed() && pillWindow.isVisible()) collapseToPill();
     else showOverlayInactive();
   });
 }
@@ -165,18 +177,17 @@ function ensureRestoreWindow() {
   if (restoreWindow && !restoreWindow.isDestroyed()) return;
 
   restoreWindow = new BrowserWindow({
-    title: "TheWay",
-    width: 260,
-    height: 100,
+    width: 1,
+    height: 1,
+    x: -10000,
+    y: -10000,
     show: false,
-    frame: true,
-    resizable: false,
-    minimizable: true,
-    maximizable: false,
-    alwaysOnTop: false,
+    frame: false,
+    transparent: true,
     focusable: true,
-    skipTaskbar: false,
-    autoHideMenuBar: true,
+    skipTaskbar: true,
+    alwaysOnTop: true,
+    hasShadow: false,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -184,16 +195,12 @@ function ensureRestoreWindow() {
     },
   });
 
-  const html = `
-<!doctype html>
-<html>
-  <head><meta charset="utf-8"/><title>TheWay</title></head>
-  <body style="font-family: Segoe UI, sans-serif; margin: 12px;">
-    <div style="font-size: 14px; margin-bottom: 6px;">TheWay is hidden.</div>
-    <div style="opacity: 0.75; font-size: 12px;">Alt-Tab here to restore the overlay.</div>
-  </body>
-</html>`;
-  restoreWindow.loadURL("data:text/html;charset=utf-8," + encodeURIComponent(html));
+  restoreWindow.loadURL(
+    "data:text/html;charset=utf-8," +
+      encodeURIComponent(
+        "<!doctype html><html><body style='background:transparent'></body></html>",
+      ),
+  );
 
   const restore = () => {
     if (suppressRestoreFocus) return;
@@ -307,8 +314,50 @@ function sendCrosshairToDcs(enabled) {
   } catch {}
 }
 
+function hideUnitImportAndReleaseFocus() {
+  if (!unitImportWindow || unitImportWindow.isDestroyed()) return;
+
+  try {
+    if (unitImportWindow.webContents) unitImportWindow.webContents.blur();
+  } catch {}
+
+  try {
+    unitImportWindow.blur();
+  } catch {}
+
+  try {
+    unitImportWindow.setFocusable(false);
+  } catch {}
+
+  try {
+    unitImportWindow.hide();
+  } catch {}
+
+  sendCrosshairToDcs(false);
+
+  setTimeout(() => {
+    if (!unitImportWindow || unitImportWindow.isDestroyed()) return;
+
+    try {
+      unitImportWindow.setFocusable(true);
+    } catch {}
+
+    try {
+      unitImportWindow.setAlwaysOnTop(true, "screen-saver");
+    } catch {}
+  }, 100);
+}
+
 function createOrShowUnitImport() {
   if (unitImportWindow && !unitImportWindow.isDestroyed()) {
+    try {
+      unitImportWindow.setFocusable(true);
+    } catch {}
+
+    try {
+      unitImportWindow.setAlwaysOnTop(true, "screen-saver");
+    } catch {}
+
     if (unitImportWindow.isMinimized()) unitImportWindow.restore();
     unitImportWindow.show();
     unitImportWindow.moveTop();
@@ -343,6 +392,14 @@ function createOrShowUnitImport() {
   unitImportWindow.setVisibleOnAllWorkspaces(true);
 
   unitImportWindow.on("show", () => {
+    try {
+      unitImportWindow.setFocusable(true);
+    } catch {}
+
+    try {
+      unitImportWindow.setAlwaysOnTop(true, "screen-saver");
+    } catch {}
+
     unitImportWindow.moveTop();
     unitImportWindow.focus();
     sendCrosshairToDcs(true);
@@ -359,6 +416,14 @@ function createOrShowUnitImport() {
   });
 
   unitImportWindow.once("ready-to-show", () => {
+    try {
+      unitImportWindow.setFocusable(true);
+    } catch {}
+
+    try {
+      unitImportWindow.setAlwaysOnTop(true, "screen-saver");
+    } catch {}
+
     unitImportWindow.show();
     unitImportWindow.moveTop();
     unitImportWindow.focus();
@@ -371,8 +436,7 @@ function createOrShowUnitImport() {
 
     if (!isQuitting) {
       e.preventDefault();
-      unitImportWindow.hide();
-      sendCrosshairToDcs(false);
+      hideUnitImportAndReleaseFocus();
     }
   });
 
@@ -488,10 +552,13 @@ if (!isTheOnlyInstance) {
     });
 
     ipcMain.on("unitImport:close", () => {
-      if (unitImportWindow && !unitImportWindow.isDestroyed()) {
-        unitImportWindow.hide();
-        sendCrosshairToDcs(false);
-      }
+      hideUnitImportAndReleaseFocus();
+    });
+
+    ipcMain.removeAllListeners("unitImport:defocus");
+
+    ipcMain.on("unitImport:defocus", () => {
+    hideUnitImportAndReleaseFocus();
     });
 
     ipcMain.on("openUnitImport", () => {
@@ -499,10 +566,7 @@ if (!isTheOnlyInstance) {
     });
 
     ipcMain.on("closeUnitImport", () => {
-      if (unitImportWindow && !unitImportWindow.isDestroyed()) {
-        unitImportWindow.hide();
-        sendCrosshairToDcs(false);
-      }
+      hideUnitImportAndReleaseFocus();
     });
 
     function applyElectronPreferences(preferences) {
