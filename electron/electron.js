@@ -335,18 +335,32 @@ function hideUnitImportAndReleaseFocus() {
 
   sendCrosshairToDcs(false);
 
-  setTimeout(() => {
-    if (!unitImportWindow || unitImportWindow.isDestroyed()) return;
+  ensureRestoreWindow();
 
+  try {
+    suppressRestoreFocus = true;
+
+    try {
+      if (typeof restoreWindow.showInactive === "function") restoreWindow.showInactive();
+      else restoreWindow.show();
+      restoreWindow.minimize();
+    } catch {}
+
+    setTimeout(() => {
+      suppressRestoreFocus = false;
+    }, 200);
+  } catch {}
+
+ /* setTimeout(() => {
+    if (!unitImportWindow || unitImportWindow.isDestroyed()) return;
     try {
       unitImportWindow.setFocusable(true);
     } catch {}
-
     try {
       unitImportWindow.setAlwaysOnTop(true, "screen-saver");
     } catch {}
-  }, 100);
-}
+  }, 100); */
+} 
 
 function createOrShowUnitImport() {
   if (unitImportWindow && !unitImportWindow.isDestroyed()) {
@@ -524,9 +538,21 @@ if (!isTheOnlyInstance) {
       } catch {}
     });
 
-    ipcMain.removeAllListeners("defocus");
+        ipcMain.removeAllListeners("defocus");
     ipcMain.on("defocus", () => {
-      showOverlayInactive();
+      if (!mainWindow || mainWindow.isDestroyed()) return;
+
+      try {
+        if (mainWindow.webContents) mainWindow.webContents.blur();
+      } catch {}
+
+      try {
+        mainWindow.blur();
+      } catch {}
+
+      try {
+        mainWindow.setFocusable(false);
+      } catch {}
     });
 
     ipcMain.removeAllListeners("f10Start");
