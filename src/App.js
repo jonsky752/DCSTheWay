@@ -47,6 +47,66 @@ function App() {
   const dispatch = useDispatch();
   useElectronIpcListeners();
 
+  // Main window: defocus when mouse leaves
+  useEffect(() => {
+    if (isUnitImportWindow) return;
+
+    let leaveTimer = null;
+
+    const handleMouseLeave = () => {
+      if (leaveTimer) window.clearTimeout(leaveTimer);
+      leaveTimer = window.setTimeout(() => {
+        ipcRenderer.send("defocus");
+      }, 50);
+    };
+
+    const handleMouseEnter = () => {
+      if (leaveTimer) {
+        window.clearTimeout(leaveTimer);
+        leaveTimer = null;
+      }
+    };
+
+    window.addEventListener("mouseleave", handleMouseLeave);
+    window.addEventListener("mouseenter", handleMouseEnter);
+
+    return () => {
+      window.removeEventListener("mouseleave", handleMouseLeave);
+      window.removeEventListener("mouseenter", handleMouseEnter);
+      if (leaveTimer) window.clearTimeout(leaveTimer);
+    };
+  }, []);
+
+  // Unit import window: defocus/hide when mouse leaves
+  useEffect(() => {
+    if (!isUnitImportWindow) return;
+
+    let leaveTimer = null;
+
+    const handleMouseLeave = () => {
+      if (leaveTimer) window.clearTimeout(leaveTimer);
+      leaveTimer = window.setTimeout(() => {
+        ipcRenderer.send("unitImport:defocus");
+      }, 50);
+    };
+
+    const handleMouseEnter = () => {
+      if (leaveTimer) {
+        window.clearTimeout(leaveTimer);
+        leaveTimer = null;
+      }
+    };
+
+    window.addEventListener("mouseleave", handleMouseLeave);
+    window.addEventListener("mouseenter", handleMouseEnter);
+
+    return () => {
+      window.removeEventListener("mouseleave", handleMouseLeave);
+      window.removeEventListener("mouseenter", handleMouseEnter);
+      if (leaveTimer) window.clearTimeout(leaveTimer);
+    };
+  }, []);
+
   const handleTransfer = useCallback(async () => {
     if (!module || !dcsWaypoints.length) return;
 
@@ -70,7 +130,6 @@ function App() {
       type: "waypoints",
       payload: GetModuleCommands(chosenSeat, moduleWaypoints, buttonExtraDelay),
     });
-
   }, [dcsWaypoints, module, userPreferences, buttonExtraDelay]);
 
   const handleAbort = useCallback(() => {
@@ -87,28 +146,38 @@ function App() {
   const handleSelectionToggle = useCallback(() => {
     if (!isSelecting) {
       if (inputMethod === "F10 Map") {
-        if (oldCrosshair) ipcRenderer.send("f10Start");
-        else ipcRenderer.send("messageToDcs", { type: "crosshair", payload: "true" });
+        if (oldCrosshair) {
+          ipcRenderer.send("f10Start");
+        } else {
+          ipcRenderer.send("messageToDcs", {
+            type: "crosshair",
+            payload: "true",
+          });
+        }
 
         dispatch(uiActions.changePendingWaypoint(true));
         setIsSelecting(true);
-
       } else if (inputMethod === "From a file") {
         ipcRenderer.send("openFile");
-
       } else if (inputMethod === "Recon Request") {
         ipcRenderer.send("openUnitImport");
       }
     } else {
       if (inputMethod === "F10 Map") {
-        if (oldCrosshair) ipcRenderer.send("f10Stop");
-        else ipcRenderer.send("messageToDcs", { type: "crosshair", payload: "false" });
+        if (oldCrosshair) {
+          ipcRenderer.send("f10Stop");
+        } else {
+          ipcRenderer.send("messageToDcs", {
+            type: "crosshair",
+            payload: "false",
+          });
+        }
 
         dispatch(uiActions.changePendingWaypoint(false));
         setIsSelecting(false);
       }
     }
-  }, [isSelecting, inputMethod, oldCrosshair]);
+  }, [dispatch, inputMethod, isSelecting, oldCrosshair]);
 
   useEffect(() => {
     ipcRenderer.on("transferWaypoints", handleTransfer);
@@ -124,7 +193,11 @@ function App() {
     return (
       <ThemeProvider theme={theme}>
         <CssBaseline enableColorScheme />
-        <UnitImportDialog open={true} onClose={() => ipcRenderer.send("closeUnitImport")} standalone />
+        <UnitImportDialog
+          open={true}
+          onClose={() => ipcRenderer.send("closeUnitImport")}
+          standalone
+        />
       </ThemeProvider>
     );
   }

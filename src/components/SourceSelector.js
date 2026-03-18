@@ -69,8 +69,8 @@ const SourceSelector = ({
                   cycleInputMethod(dir);
                 }}
                 sx={{
-                  width: "60%",
-                  backgroundColor: "rgba(0, 0, 0, 0.45)",
+                  width: "75%",
+                  backgroundColor: "rgba(0, 0, 0, 0.25)",
                   color: "text.primary",
                 }}
                 inputProps={{

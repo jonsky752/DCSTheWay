@@ -562,7 +562,8 @@ export const UNIT_CATALOG = [
         "name": "SA-11",
         "units": [
           "SA-11 Buk CC 9S470M1",
-          "SA-11 Buk SR 9S18M1"
+          "SA-11 Buk SR 9S18M1",
+          "SA-11 Buk LN 9A310M1"
         ]
       },
         //////////////////////////////////////////   AIR DEFENCE HAWK  //////////////////
