@@ -19,6 +19,7 @@ class ah6j {
 
   static #delay0   = 10  + this.extraDelay;
   static #delay100 = 100 + this.extraDelay;
+  static #delay200 = 200 + this.extraDelay;
   static #delay500 = 500 + this.extraDelay;
 
 
@@ -107,7 +108,7 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code,
-      delay: this.#delay100,
+      delay: this.#delay200,
       activate: 1,
       addDepress: "false",
     });
@@ -366,14 +367,14 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: this.#codes.INNER,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 1,
     });
 
     this.#codesPayload.push({
       device,
       code: this.#codes.OUTER,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 1,
     });
 
@@ -387,7 +388,7 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 1,
       addDepress: "false",
     });
@@ -403,14 +404,14 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: this.#codes.OUTER,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 1,
     });
 
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 1,
       addDepress: "false",
     });
@@ -420,6 +421,13 @@ class ah6j {
       delay: 600 + this.extraDelay,
       activate: 0,
       addDepress: "false",
+    });
+
+      this.#codesPayload.push({
+      device,
+      code: 0,
+      delay: 500 + this.extraDelay,
+      activate: 0,
     });
 
     const result = this.#codesPayload.slice();
@@ -453,14 +461,14 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: this.#codes.OUTER,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: -1,
     });
 
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 1,
       addDepress: "false",
     });
@@ -503,6 +511,213 @@ class ah6j {
 
 
   //====================================================
+  // STATE 1
+  // ENTER WAYPOINT NAME
+  //====================================================
+
+  static #enterWaypointName(device, targetLabel) {
+
+    const currentLabel = ["X", "X", "X", "X"];
+
+    for (let c = 0; c < 4; c++) {
+
+      const s = this.#shortestSteps(
+        currentLabel[c],
+        targetLabel[c],
+        this.#nameCharset
+      );
+
+      this.#pushInnerSteps(device, s);
+
+      if (c < 3) {
+        this.#pushOuterCWName(device, 1);
+      }
+
+    }
+
+  }
+
+
+  //====================================================
+  // STATE 4
+  // ENTER LAT / LONG COORDINATES
+  //
+  // Cursor order after name char 4:
+  // LAT deg digit 1 -> LAT deg digit 2 -> LAT min x5 -> LAT hemi
+  // -> LON deg digit 1 -> LON deg digit 2 -> LON deg digit 3
+  // -> LON min x5 -> LON hemi -> wraps back to row 1 char 1
+  //====================================================
+
+  static #enterCoordinates(device, prev, next) {
+
+    const prevLat = this.#parseCoord(prev.lat);
+    const nextLat = this.#parseCoord(next.lat);
+
+    const prevLon = this.#parseCoord(prev.long);
+    const nextLon = this.#parseCoord(next.long);
+
+    const prevLatHemi = String(prev.latHemi || "N").toUpperCase();
+    const nextLatHemi = this.#getTargetHemisphere(next, "lat");
+
+    const prevLonHemi = String(prev.longHemi || "E").toUpperCase();
+    const nextLonHemi = this.#getTargetHemisphere(next, "long");
+
+    const prevLatDegDigits = this.#degreeDigits(prevLat.deg, 2);
+    const nextLatDegDigits = this.#degreeDigits(nextLat.deg, 2);
+
+    const prevLatMinDigits = this.#minuteDigits(prevLat.min);
+    const nextLatMinDigits = this.#minuteDigits(nextLat.min);
+
+    const prevLonDegDigits = this.#degreeDigits(prevLon.deg, 3);
+    const nextLonDegDigits = this.#degreeDigits(nextLon.deg, 3);
+
+    const prevLonMinDigits = this.#minuteDigits(prevLon.min);
+    const nextLonMinDigits = this.#minuteDigits(nextLon.min);
+
+      this.#codesPayload.push({
+      device,
+      code: 0,
+      delay: 200 + this.extraDelay,
+      activate: 0,
+    });
+    
+    // move from row 1 char 4 to latitude degree digit 1
+    this.#pushOuterCW(device, 1);
+
+    // latitude degrees (2 digits)
+    for (let i = 0; i < 2; i++) {
+      const s = this.#directDigitSteps(
+        prevLatDegDigits[i],
+        nextLatDegDigits[i],
+      );
+
+      this.#pushInnerSteps(device, s);
+      this.#pushOuterCW(device, 1);
+    }
+
+    // latitude minutes (5 digits)
+    for (let i = 0; i < 5; i++) {
+      const s = this.#directDigitSteps(
+        prevLatMinDigits[i],
+        nextLatMinDigits[i],
+      );
+
+      this.#pushInnerSteps(device, s);
+      this.#pushOuterCW(device, 1);
+    }
+
+    // latitude hemisphere
+    this.#pushInnerSteps(
+      device,
+      this.#shortestSteps(prevLatHemi, nextLatHemi, "NS")
+    );
+
+    // move to longitude degree digit 1
+    this.#pushOuterCW(device, 1);
+
+    // longitude degrees (3 digits)
+    for (let i = 0; i < 3; i++) {
+      const s = this.#directDigitSteps(
+        prevLonDegDigits[i],
+        nextLonDegDigits[i],
+      );
+
+      this.#pushInnerSteps(device, s);
+      this.#pushOuterCW(device, 1);
+    }
+
+    // longitude minutes (5 digits)
+    for (let i = 0; i < 5; i++) {
+      const s = this.#directDigitSteps(
+        prevLonMinDigits[i],
+        nextLonMinDigits[i],
+      );
+
+      this.#pushInnerSteps(device, s);
+      this.#pushOuterCW(device, 1);
+    }
+
+    // longitude hemisphere
+    this.#pushInnerSteps(
+      device,
+      this.#shortestSteps(prevLonHemi, nextLonHemi, "EW")
+    );
+
+    // wrap back to first character of waypoint name
+    this.#pushOuterCW(device, 1);
+
+    this.#codesPayload.push({
+      device,
+      code: 0,
+      delay: 200 + this.extraDelay,
+      activate: 0,
+    });
+
+  }
+
+
+  //====================================================
+  // STATE 5
+  // SAVE WAYPOINT
+  //====================================================
+
+  static #saveWaypoint(device) {
+
+      this.#codesPayload.push({
+      device,
+      code: 0,
+      delay: 100 + this.extraDelay,
+      activate: 0,
+    });
+
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 1,
+      addDepress: "false",
+    });
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 0,
+      addDepress: "false",
+    });
+
+        this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 1,
+      addDepress: "false",
+    });
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 0,
+      addDepress: "false",
+    });
+
+            this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 1,
+      addDepress: "false",
+    });
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 0,
+      addDepress: "false",
+    });
+
+  }
+
+    //====================================================
   // FLIGHT PLAN STATE 1
   // DELETE CURRENT FLIGHT PLAN
   // FPL -> ENT -> INNER CW -> ENT
@@ -514,6 +729,13 @@ class ah6j {
     const oldPayload = this.#codesPayload;
     this.#codesPayload = [];
 
+      this.#codesPayload.push({
+      device,
+      code: 0,
+      delay: 100 + this.extraDelay,
+      activate: 0,
+    });
+    
     // FPL press
     this.#codesPayload.push({
       device,
@@ -585,7 +807,7 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 0,
       addDepress: "false",
     });
@@ -602,7 +824,7 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 0,
       addDepress: "false",
     });
@@ -619,7 +841,7 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 0,
       addDepress: "false",
     });
@@ -636,7 +858,7 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 0,
       addDepress: "false",
     });
@@ -653,7 +875,7 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 0,
       addDepress: "false",
     });
@@ -670,7 +892,7 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 0,
       addDepress: "false",
     });
@@ -687,7 +909,7 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 0,
       addDepress: "false",
     });    // ENT press
@@ -702,7 +924,7 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 0,
       addDepress: "false",
     });
@@ -719,7 +941,7 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 0,
       addDepress: "false",
     });
@@ -736,7 +958,7 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 0,
       addDepress: "false",
     });
@@ -753,7 +975,7 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 0,
       addDepress: "false",
     });
@@ -770,7 +992,7 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 0,
       addDepress: "false",
     });
@@ -787,7 +1009,7 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 0,
       addDepress: "false",
     });
@@ -804,7 +1026,7 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 0,
       addDepress: "false",
     });
@@ -821,7 +1043,7 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 0,
       addDepress: "false",
     });
@@ -838,7 +1060,7 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 0,
       addDepress: "false",
     });
@@ -855,7 +1077,7 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 0,
       addDepress: "false",
     });
@@ -872,7 +1094,7 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 0,
       addDepress: "false",
     });
@@ -897,11 +1119,18 @@ class ah6j {
     const oldPayload = this.#codesPayload;
     this.#codesPayload = [];
 
+      this.#codesPayload.push({
+      device,
+      code: 0,
+      delay: 100 + this.extraDelay,
+      activate: 0,
+    });
+    
     // WPT press
     this.#codesPayload.push({
       device,
       code: this.#codes.WPT,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 1,
       addDepress: "false",
     });
@@ -925,7 +1154,7 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 1,
       addDepress: "false",
     });
@@ -942,7 +1171,7 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: this.#codes.FPL,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 1,
       addDepress: "false",
     });
@@ -976,11 +1205,18 @@ class ah6j {
     const oldPayload = this.#codesPayload;
     this.#codesPayload = [];
 
+      this.#codesPayload.push({
+      device,
+      code: 0,
+      delay: 200 + this.extraDelay,
+      activate: 0,
+    });
+    
     // FPL press
     this.#codesPayload.push({
       device,
       code: this.#codes.FPL,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 1,
       addDepress: "false",
     });
@@ -1034,163 +1270,6 @@ class ah6j {
     this.#codesPayload = oldPayload;
 
     return result;
-
-  }
-
-
-  //====================================================
-  // STATE 3
-  // ENTER WAYPOINT NAME
-  //====================================================
-
-  static #enterWaypointName(device, targetLabel) {
-
-    const currentLabel = ["X", "X", "X", "X"];
-
-    for (let c = 0; c < 4; c++) {
-
-      const s = this.#shortestSteps(
-        currentLabel[c],
-        targetLabel[c],
-        this.#nameCharset
-      );
-
-      this.#pushInnerSteps(device, s);
-
-      if (c < 3) {
-        this.#pushOuterCWName(device, 1);
-      }
-
-    }
-
-  }
-
-
-  //====================================================
-  // STATE 4
-  // ENTER LAT / LONG COORDINATES
-  //
-  // Cursor order after name char 4:
-  // LAT deg digit 1 -> LAT deg digit 2 -> LAT min x5 -> LAT hemi
-  // -> LON deg digit 1 -> LON deg digit 2 -> LON deg digit 3
-  // -> LON min x5 -> LON hemi -> wraps back to row 1 char 1
-  //====================================================
-
-  static #enterCoordinates(device, prev, next) {
-
-    const prevLat = this.#parseCoord(prev.lat);
-    const nextLat = this.#parseCoord(next.lat);
-
-    const prevLon = this.#parseCoord(prev.long);
-    const nextLon = this.#parseCoord(next.long);
-
-    const prevLatHemi = String(prev.latHemi || "N").toUpperCase();
-    const nextLatHemi = this.#getTargetHemisphere(next, "lat");
-
-    const prevLonHemi = String(prev.longHemi || "E").toUpperCase();
-    const nextLonHemi = this.#getTargetHemisphere(next, "long");
-
-    const prevLatDegDigits = this.#degreeDigits(prevLat.deg, 2);
-    const nextLatDegDigits = this.#degreeDigits(nextLat.deg, 2);
-
-    const prevLatMinDigits = this.#minuteDigits(prevLat.min);
-    const nextLatMinDigits = this.#minuteDigits(nextLat.min);
-
-    const prevLonDegDigits = this.#degreeDigits(prevLon.deg, 3);
-    const nextLonDegDigits = this.#degreeDigits(nextLon.deg, 3);
-
-    const prevLonMinDigits = this.#minuteDigits(prevLon.min);
-    const nextLonMinDigits = this.#minuteDigits(nextLon.min);
-
-    // move from row 1 char 4 to latitude degree digit 1
-    this.#pushOuterCW(device, 1);
-
-    // latitude degrees (2 digits)
-    for (let i = 0; i < 2; i++) {
-      const s = this.#directDigitSteps(
-        prevLatDegDigits[i],
-        nextLatDegDigits[i],
-      );
-
-      this.#pushInnerSteps(device, s);
-      this.#pushOuterCW(device, 1);
-    }
-
-    // latitude minutes (5 digits)
-    for (let i = 0; i < 5; i++) {
-      const s = this.#directDigitSteps(
-        prevLatMinDigits[i],
-        nextLatMinDigits[i],
-      );
-
-      this.#pushInnerSteps(device, s);
-      this.#pushOuterCW(device, 1);
-    }
-
-    // latitude hemisphere
-    this.#pushInnerSteps(
-      device,
-      this.#shortestSteps(prevLatHemi, nextLatHemi, "NS")
-    );
-
-    // move to longitude degree digit 1
-    this.#pushOuterCW(device, 1);
-
-    // longitude degrees (3 digits)
-    for (let i = 0; i < 3; i++) {
-      const s = this.#directDigitSteps(
-        prevLonDegDigits[i],
-        nextLonDegDigits[i],
-      );
-
-      this.#pushInnerSteps(device, s);
-      this.#pushOuterCW(device, 1);
-    }
-
-    // longitude minutes (5 digits)
-    for (let i = 0; i < 5; i++) {
-      const s = this.#directDigitSteps(
-        prevLonMinDigits[i],
-        nextLonMinDigits[i],
-      );
-
-      this.#pushInnerSteps(device, s);
-      this.#pushOuterCW(device, 1);
-    }
-
-    // longitude hemisphere
-    this.#pushInnerSteps(
-      device,
-      this.#shortestSteps(prevLonHemi, nextLonHemi, "EW")
-    );
-
-    // wrap back to first character of waypoint name
-    this.#pushOuterCW(device, 1);
-
-  }
-
-
-  //====================================================
-  // STATE 5
-  // SAVE WAYPOINT
-  //====================================================
-
-  static #saveWaypoint(device) {
-
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 100 + this.extraDelay,
-      activate: 1,
-      addDepress: "false",
-    });
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 800 + this.extraDelay,
-      activate: 0,
-      addDepress: "false",
-    });
 
   }
 

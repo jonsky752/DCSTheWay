@@ -256,7 +256,7 @@ throwIfAborted();
       const currentPosition = await requestOwnPositionSnapshot(ipcRenderer);
       throwIfAborted();
 
-
+     
       // ----------------------------------------------------
       // Confirm waypoint name
       // ----------------------------------------------------

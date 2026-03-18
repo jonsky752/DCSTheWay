@@ -40,6 +40,7 @@ function App() {
   const [inputMethod, setInputMethod] = useState("F10 Map");
   const [isSelecting, setIsSelecting] = useState(false);
   const [transferRunning, setTransferRunning] = useState(false);
+  const [transferAborting, setTransferAborting] = useState(false);
 
   const buttonExtraDelay = userPreferences["buttonDelay"] ?? 0;
   const oldCrosshair = userPreferences["oldCrosshair"];
@@ -110,32 +111,42 @@ function App() {
   const handleTransfer = useCallback(async () => {
     if (!module || !dcsWaypoints.length) return;
 
-    const moduleWaypoints = ConvertModuleWaypoints(dcsWaypoints, module);
-    const chosenSeat = await askUserAboutSeat(module, userPreferences);
+    setTransferRunning(true);
+    setTransferAborting(false);
 
-    const transferModule = GetTransferCommands(chosenSeat);
+    try {
+      const moduleWaypoints = ConvertModuleWaypoints(dcsWaypoints, module);
+      const chosenSeat = await askUserAboutSeat(module, userPreferences);
 
-    if (transferModule?.runTransfer) {
-      await transferModule.runTransfer({
-        module: chosenSeat,
-        moduleWaypoints,
-        buttonExtraDelay,
-        ipcRenderer,
-        setRunning: setTransferRunning,
+      const transferModule = GetTransferCommands(chosenSeat);
+
+      if (transferModule?.runTransfer) {
+        await transferModule.runTransfer({
+          module: chosenSeat,
+          moduleWaypoints,
+          buttonExtraDelay,
+          ipcRenderer,
+          setRunning: setTransferRunning,
+        });
+        return;
+      }
+
+      ipcRenderer.send("messageToDcs", {
+        type: "waypoints",
+        payload: GetModuleCommands(chosenSeat, moduleWaypoints, buttonExtraDelay),
       });
-      return;
+    } finally {
+      setTransferRunning(false);
+      setTransferAborting(false);
     }
-
-    ipcRenderer.send("messageToDcs", {
-      type: "waypoints",
-      payload: GetModuleCommands(chosenSeat, moduleWaypoints, buttonExtraDelay),
-    });
   }, [dcsWaypoints, module, userPreferences, buttonExtraDelay]);
 
   const handleAbort = useCallback(() => {
-    setTransferRunning(false);
+    setTransferAborting(true); // NEW
+
     const transferModule = GetTransferCommands(module);
     transferModule?.requestAbort?.();
+
     ipcRenderer.send("messageToDcs", { type: "abort" });
   }, [module]);
 
@@ -230,11 +241,11 @@ function App() {
 
         <Box sx={{ height: "15%" }}>
           <TransferControls
+            transferRunning={transferRunning}
+            transferAborting={transferAborting}
             onTransfer={handleTransfer}
             onAbort={handleAbort}
-            onSaveFile={handleFileSave}
-            busyOverride={transferRunning}
-          />
+            />
         </Box>
       </Box>
     </ThemeProvider>

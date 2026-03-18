@@ -858,7 +858,7 @@ export const UNIT_CATALOG = [
     "category": "Aerial",
     "subcategories": [
       {
-        "name": "Battleplane",
+        "name": "Multirole",
         "units": [
           "A-10A",
           "A-10C",
@@ -887,8 +887,6 @@ export const UNIT_CATALOG = [
           "F-86F_FC",
           "FA-18C_hornet",
           "FCHS",
-          "Fw-190A8",
-          "Fw-190D9",
           "G-4",
           "H-6J",
           "I-16",
@@ -916,14 +914,8 @@ export const UNIT_CATALOG = [
           { prefix: "Mirage-F1" },
           "MosquitoFBMkVI",
           "OV-10A",
-          "P-47D-30",
-          "P-47D-40",
-          "P-51D",
-          "P-51D-30-NA",
           "QF-4E",
           "S-3B",
-          "SpitfireLFMkIX",
-          "SpitfireLFMkIXCW",
           "Su-17M4",
           "Su-24M",
           "Su-24MR",
@@ -936,6 +928,20 @@ export const UNIT_CATALOG = [
           "Su-34",
           "Tornado GR4",
           "Tornado IDS"
+        ]
+      },
+      {
+        "name": "WWII Fighter",
+        "units": [
+          "Bf-109K-4",
+          "Fw-190A8",
+          "Fw-190D9",
+          "P-47D-30",
+          "P-47D-40",
+          "P-51D",
+          "P-51D-30-NA",
+          "SpitfireLFMkIX",
+          "SpitfireLFMkIXCW",
         ]
       },
       {

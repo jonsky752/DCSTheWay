@@ -1,3 +1,4 @@
+//v2
 import a10 from "./a10";
 import ah6j from "./ah6j";
 import ah64 from "./ah64";
@@ -27,6 +28,7 @@ export default function getModuleCommands(module, waypoints, buttonExtraDelay) {
   let commands = [];
 
   switch (module) {
+
     case "a10ADD":
     case "a10NEW":
       a10.slotVariant = module;

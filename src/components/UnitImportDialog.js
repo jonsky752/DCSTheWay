@@ -2,7 +2,6 @@ import React from "react";
 import { useSelector } from "react-redux";
 import { UNIT_LOOKUP } from "../data/unitLookupFromCatalog";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
-import FilterListIcon from "@mui/icons-material/FilterList";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +30,10 @@ import {
 } from "@mui/material";
 
 const { ipcRenderer } = window.require("electron");
+
+// Top-of-file config
+const SHOW_WITHIN_FILTER = true;
+const MAX_WITHIN_RADIUS = 10;
 
 // ---- LocalStorage keys (UI prefs) ----
 const LS_PREFIX = "theway.unitImport.";
@@ -258,7 +261,12 @@ export default function UnitImportDialog({ open, onClose }) {
 
   const [intelWithinEnabled, setIntelWithinEnabled] = React.useState(true);
   const [unitsMode, setUnitsMode] = React.useState(readLS(LS_KEYS.unitsMode, "Imperial"));
-  const [intelRadius, setIntelRadius] = React.useState(2);
+  const [intelRadius, setIntelRadius] = React.useState(() => {
+    const saved = Number(readLS(LS_KEYS.withinRadius, 2));
+    return Number.isFinite(saved)
+      ? Math.min(MAX_WITHIN_RADIUS, Math.max(1, Math.round(saved)))
+      : 2;
+  });
   const [coordFmt, setCoordFmt] = React.useState(readLS(LS_KEYS.coordFmt, "DEC"));
   const [isIntelLoading, setIsIntelLoading] = React.useState(false);
 
@@ -328,7 +336,20 @@ export default function UnitImportDialog({ open, onClose }) {
   };
 
   const visibleColCount = React.useMemo(() => {
-    const keys = ["coalition", "type", "category", "subcategory", "capability", "name", "position", "elev", "brgDeg", "rng", "speed", "import"];
+    const keys = [
+      "coalition",
+      "type",
+      "category",
+      "subcategory",
+      "capability",
+      "name",
+      "position",
+      "elev",
+      "brgDeg",
+      "rng",
+      "speed",
+      "import",
+    ];
     return keys.reduce((acc, k) => acc + (isColVisible(k) ? 1 : 0), 0);
   }, [colVis]);
 
@@ -351,14 +372,15 @@ export default function UnitImportDialog({ open, onClose }) {
   const [refPoint, setRefPoint] = React.useState(null);
 
   const availableCategories = React.useMemo(() => {
-    const set = new Set();
-    for (const u of snapshot) {
-      if (u.category) set.add(u.category);
-    }
-    return Array.from(set).sort((a, b) =>
-      a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" })
-    );
-  }, [snapshot]);
+  const set = new Set();
+
+  Object.values(UNIT_LOOKUP).forEach((entry) => {
+    if (entry?.category) set.add(entry.category);
+  });
+  return Array.from(set).sort((a, b) =>
+    a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" })
+  );
+}, []);
 
   React.useEffect(() => {
     if (!availableCategories.length) return;
@@ -684,9 +706,19 @@ export default function UnitImportDialog({ open, onClose }) {
     const origin = intelOrigin === "Ownship" ? "ownship" : "camera";
     const domain = intelUnitType === "All" ? "all" : (intelUnitType || "Ground").toLowerCase();
 
+    const withinEnabledEffective = SHOW_WITHIN_FILTER ? intelWithinEnabled : true;
+
     const radiusNm =
-      intelWithinEnabled
-        ? Math.max(0, unitsMode === "Metric" ? kmToNm(Number(intelRadius) || 0) : Number(intelRadius) || 0)
+      withinEnabledEffective
+        ? Math.min(
+            MAX_WITHIN_RADIUS,
+            Math.max(
+              1,
+              unitsMode === "Metric"
+                ? kmToNm(Number(intelRadius) || 0)
+                : Number(intelRadius) || 0
+            )
+          )
         : 9999;
 
     ipcRenderer.send("messageToDcs", {
@@ -711,7 +743,17 @@ export default function UnitImportDialog({ open, onClose }) {
   ]);
 
   const rows = React.useMemo(() => {
-    const radiusNm = Math.max(0, unitsMode === "Metric" ? kmToNm(Number(intelRadius) || 0) : Number(intelRadius) || 0);
+    const withinEnabledEffective = SHOW_WITHIN_FILTER ? intelWithinEnabled : true;
+
+    const radiusNm = Math.min(
+      MAX_WITHIN_RADIUS,
+      Math.max(
+        1,
+        unitsMode === "Metric"
+          ? kmToNm(Number(intelRadius) || 0)
+          : Number(intelRadius) || 0
+      )
+    );
 
     return snapshot
       .map((u) => {
@@ -768,7 +810,7 @@ export default function UnitImportDialog({ open, onClose }) {
 
         return true;
       })
-      .filter((r) => (intelWithinEnabled ? r.rngNm <= radiusNm : true));
+      .filter((r) => (withinEnabledEffective ? r.rngNm <= radiusNm : true));
   }, [
     snapshot,
     intelCoalitionFilter,
@@ -905,7 +947,7 @@ export default function UnitImportDialog({ open, onClose }) {
     />
   );
 
-  const mkBox = (border, tickColor) => {
+  const mkBox = (border, tickColor, fill = "transparent") => {
     const box = (withTick) => (
       <span
         style={{
@@ -917,13 +959,13 @@ export default function UnitImportDialog({ open, onClose }) {
           alignItems: "center",
           justifyContent: "center",
           boxSizing: "border-box",
-          background: "transparent",
+          background: withTick ? fill : "transparent",
           fontSize: 13,
           lineHeight: 1,
-          color: tickColor,
+          color: withTick ? tickColor : "transparent",
         }}
       >
-        {withTick ? "✓" : ""}
+        ✓
       </span>
     );
     return { icon: box(false), checkedIcon: box(true) };
@@ -931,6 +973,7 @@ export default function UnitImportDialog({ open, onClose }) {
 
   const normalBox = mkBox("rgba(255,255,255,0.45)", "rgba(255,255,255,0.9)");
   const movedBox = mkBox("#c62828", "rgba(255,255,255,0.9)");
+  const greenBox = mkBox("#4caf50", "#111", "#4caf50");
 
   const coordFmtOptions = [
     { value: "DEC", label: "Dec" },
@@ -939,12 +982,6 @@ export default function UnitImportDialog({ open, onClose }) {
     { value: "DMM", label: "DMM" },
     { value: "MGRS", label: "MGRS" },
   ];
-
-  const cycleCoordFmt = (dir) => {
-    const idx = coordFmtOptions.findIndex((o) => o.value === coordFmt);
-    const next = (idx + dir + coordFmtOptions.length) % coordFmtOptions.length;
-    setCoordFmt(coordFmtOptions[next].value);
-  };
 
   const elevUnitLabel = unitsMode === "Metric" ? "m" : "ft";
   const speedUnitLabel = unitsMode === "Metric" ? "km/h" : "kt";
@@ -999,33 +1036,42 @@ export default function UnitImportDialog({ open, onClose }) {
           </FormControl>
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
-            <Checkbox checked={intelWithinEnabled} onChange={(e) => setIntelWithinEnabled(e.target.checked)} />
-            <Typography sx={{ userSelect: "none" }}>Within</Typography>
+  {SHOW_WITHIN_FILTER && (
+    <Checkbox
+      checked={intelWithinEnabled}
+      onChange={(e) => setIntelWithinEnabled(e.target.checked)}
+      icon={greenBox.icon}
+      checkedIcon={greenBox.checkedIcon}
+    />
+  )}
 
-            <Box
-              onWheel={(e) => {
-                if (!intelWithinEnabled) return;
-                e.preventDefault();
+  <Typography sx={{ userSelect: "none" }}>Within</Typography>
 
-                const dir = e.deltaY > 0 ? -1 : 1;
-                setIntelRadius((prev) => {
-                  const n = Number(prev) || 0;
-                  return Math.max(0, Math.round(n + dir));
-                });
-              }}
-              sx={{ display: "flex", alignItems: "center" }}
-              title="Mouse wheel changes radius"
-            >
-              <TextField
-                size="small"
-                type="number"
-                inputProps={{ min: 0, step: 1 }}
-                value={intelRadius}
-                onChange={(e) => setIntelRadius(Math.max(0, Math.round(Number(e.target.value) || 0)))}
-                sx={{ width: 85 }}
-              />
-            </Box>
-          </Box>
+  <Box
+    onWheel={(e) => {
+      e.preventDefault();
+      const dir = e.deltaY > 0 ? -1 : 1;
+      setIntelRadius((prev) => {
+        const n = Number(prev) || 0;
+        return Math.min(MAX_WITHIN_RADIUS, Math.max(1, Math.round(n + dir)));
+      });
+    }}
+    sx={{ display: "flex", alignItems: "center" }}
+    title="Mouse wheel changes radius"
+  >
+    <TextField
+      size="small"
+      type="number"
+      inputProps={{ min: 1, max: MAX_WITHIN_RADIUS, step: 1 }}
+      value={intelRadius}
+      onChange={(e) => {
+        const val = Math.round(Number(e.target.value) || 0);
+        setIntelRadius(Math.min(MAX_WITHIN_RADIUS, Math.max(1, val)));
+      }}
+      sx={{ width: 85 }}
+    />
+  </Box>
+</Box>
 
           <FormControl size="small" sx={fcCompact(90)}>
             <InputLabel>Units</InputLabel>
@@ -1087,42 +1133,14 @@ export default function UnitImportDialog({ open, onClose }) {
                         checked={!!colVis[key]}
                         onChange={() => toggleCol(key)}
                         size="small"
+                        icon={greenBox.icon}
+                        checkedIcon={greenBox.checkedIcon}
                       />
                     }
                     label={label}
                   />
                 ))}
               </FormGroup>
-
-              <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
-                <Button size="small" onClick={() => setColVis(defaultColVis)}>
-                  Reset
-                </Button>
-                <Button
-                  size="small"
-                  onClick={() =>
-                    setColVis((prev) => {
-                      const next = { ...prev };
-                      for (const k of Object.keys(next)) next[k] = false;
-                      return next;
-                    })
-                  }
-                >
-                  Hide all
-                </Button>
-                <Button
-                  size="small"
-                  onClick={() =>
-                    setColVis((prev) => {
-                      const next = { ...prev };
-                      for (const k of Object.keys(next)) next[k] = true;
-                      return next;
-                    })
-                  }
-                >
-                  Show all
-                </Button>
-              </Box>
             </Box>
           </Menu>
 
@@ -1176,35 +1194,93 @@ export default function UnitImportDialog({ open, onClose }) {
 
                 {isColVisible("category") && (
                   <TableCell sx={headCellSx("category")}>
-                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 0.5, pr: 1.5 }}>
-                      <TableSortLabel
-                        active={orderBy === "category"}
-                        direction={orderBy === "category" ? order : "asc"}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 0.5,
+                        pr: 1.5,
+                        "&:hover .categorySortArrow .MuiTableSortLabel-icon": {
+                          opacity: orderBy === "category" ? 1 : 0.4,
+                        },
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 0.6,
+                          minWidth: 0,
+                          flex: 1,
+                          cursor: "pointer",
+                        }}
                         onClick={() => handleSort("category")}
-                        sx={{ flex: 1, minWidth: 0 }}
+                        title="Sort by Category"
                       >
-                        Category
-                      </TableSortLabel>
+                        <Box
+                          sx={{
+                            userSelect: "none",
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
+                          Category
+                        </Box>
+
+                        <Box
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCategoryAnchorEl(e.currentTarget);
+                          }}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          sx={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            width: 18,
+                            height: 18,
+                            cursor: "pointer",
+                            flexShrink: 0,
+                          }}
+                          title="Filter categories"
+                        >
+                          {normalBox.checkedIcon}
+                        </Box>
+                      </Box>
 
                       <Box
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setCategoryAnchorEl(e.currentTarget);
-                        }}
-                        onMouseDown={(e) => e.stopPropagation()}
+                        className="categorySortArrow"
+                        onClick={() => handleSort("category")}
                         sx={{
                           display: "inline-flex",
                           alignItems: "center",
-                          justifyContent: "center",
-                          width: 18,
-                          height: 18,
-                          cursor: "pointer",
+                          justifyContent: "flex-end",
                           flexShrink: 0,
-                          opacity: selectedCategories.length && selectedCategories.length < availableCategories.length ? 1 : 0.9,
+                          cursor: "pointer",
+                          ml: 0.5,
+                          mr: -0.15,
                         }}
-                        title="Filter categories"
                       >
-                        {selectedCategories.length === 0 || allCategoriesSelected ? normalBox.checkedIcon : normalBox.icon}
+                        <TableSortLabel
+                          active={orderBy === "category"}
+                          direction={orderBy === "category" ? order : "asc"}
+                          sx={{
+                            m: 0,
+                            minWidth: 0,
+                            "& .MuiTableSortLabel-icon": {
+                              opacity: 0,
+                              transition: "opacity 120ms ease-in-out",
+                              marginRight: 0,
+                            },
+                            "&.Mui-active .MuiTableSortLabel-icon": {
+                              opacity: 1,
+                            },
+                          }}
+                        >
+                          <span />
+                        </TableSortLabel>
                       </Box>
                     </Box>
 
@@ -1222,8 +1298,9 @@ export default function UnitImportDialog({ open, onClose }) {
                                 indeterminate={someCategoriesSelected}
                                 onChange={toggleAllCategories}
                                 size="small"
-                                icon={normalBox.icon}
-                                checkedIcon={normalBox.checkedIcon}
+                                icon={greenBox.icon}
+                                checkedIcon={greenBox.checkedIcon}
+                                indeterminateIcon={greenBox.checkedIcon}
                               />
                             }
                             label="All"
@@ -1237,23 +1314,14 @@ export default function UnitImportDialog({ open, onClose }) {
                                   checked={selectedCategories.includes(cat)}
                                   onChange={() => toggleCategory(cat)}
                                   size="small"
-                                  icon={normalBox.icon}
-                                  checkedIcon={normalBox.checkedIcon}
+                                  icon={greenBox.icon}
+                                  checkedIcon={greenBox.checkedIcon}
                                 />
                               }
                               label={cat}
                             />
                           ))}
                         </FormGroup>
-
-                        <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
-                          <Button size="small" onClick={() => setSelectedCategories([...availableCategories])}>
-                            Show all
-                          </Button>
-                          <Button size="small" onClick={() => setSelectedCategories([])}>
-                            Clear
-                          </Button>
-                        </Box>
                       </Box>
                     </Menu>
 
@@ -1305,17 +1373,20 @@ export default function UnitImportDialog({ open, onClose }) {
 
                 {isColVisible("position") && (
                   <TableCell sx={headCellSx("position")}>
-                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
-                      <span>Position</span>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, pr: 1.5 }}>
+                      <TableSortLabel
+                        active={orderBy === "position"}
+                        direction={orderBy === "position" ? order : "asc"}
+                        onClick={() => handleSort("position")}
+                        sx={{ flex: 1, minWidth: 0 }}
+                      >
+                        Position
+                      </TableSortLabel>
 
                       <Box
-                        onWheel={(e) => {
-                          e.preventDefault();
-                          const dir = e.deltaY > 0 ? 1 : -1;
-                          cycleCoordFmt(dir);
-                        }}
-                        sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-                        title="Mouse wheel changes coordinate format"
+                        onClick={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        title="Coordinate format"
                       >
                         <Select
                           size="small"
@@ -1550,7 +1621,6 @@ export default function UnitImportDialog({ open, onClose }) {
           sx={{ opacity: 0.5, bottom: 80, fontSize: "0.7rem" }}
         >
           Press REQUEST to capture units. REQUEST again to calculate moving units.
-
           PREVIOUS SNAPSHOT MAY BE SHOWN. Check Snapshot age --&gt;
         </Typography>
 

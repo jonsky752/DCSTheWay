@@ -149,8 +149,6 @@ export default async function ah6jTransfer({
         row2: await readRow2(ipcRenderer),
       };
 
-      console.log("[AH6J] DISPLAY ROW2:", display.row2);
-      console.log("[AH6J] TARGET WP:", moduleWaypoints[i]);
 
       // allow TNL3100 page to settle before sending first command
       await sleep(300 + buttonExtraDelay);
@@ -178,7 +176,7 @@ export default async function ah6jTransfer({
       );
 
       await sendCommands(ipcRenderer, buildFlightPlan);
-      await sleep(estimateRuntime(buildFlightPlan, 1000));
+      await sleep(estimateRuntime(buildFlightPlan, 1500));
       throwIfAborted();
     }
   } catch (err) {

@@ -519,7 +519,7 @@ static buildFinalSetupPushCommands() {
     const current = this.#snapshotToCurrentChars(currentPosition);
     const target = this.#waypointToTargetChars(waypoint);
 
-    // DEBUG: show coordinate conversion.
+ /*   // DEBUG: show coordinate conversion.
     const rawLat = currentPosition?.lat;
     const rawLon = currentPosition?.long ?? currentPosition?.lon;
 
@@ -535,17 +535,18 @@ static buildFinalSetupPushCommands() {
     console.log("Target waypoint:", targetLat, targetLon);
     console.log("Waypoint source:", waypoint);
     console.log("------------------------------------------------");
+    */
 
     // Automatic: edit every coordinate character from current to target.
     this.#enterCoordinatesAutomatically(current, target);
 
-    this.#pause(200);
+    this.#pause(800);
 
     // Sequence: confirm coordinate entry.
     this.#ENT();
-    this.#pause(400);
+    this.#pause(800);
     this.#ENT();
-    this.#pause(400);
+    this.#pause(800);
     this.#ENT();
 
     return this.getPayload();
@@ -558,7 +559,7 @@ static buildFinalSetupPushCommands() {
   static buildSaveWaypointCommands() {
     this.resetPayload();
 
-    this.#pause(200);
+    this.#pause(800);
 
     // Sequence: save and return.
     this.#SMALLp();

@@ -7,33 +7,43 @@ import { useSelector } from "react-redux";
 const TransferControls = (props) => {
   const waypointList = useSelector((state) => state.waypoints.dcsWaypoints);
   const { module, busy } = useSelector((state) => state.dcsPoint);
+  const effectiveBusy = props.busyOverride ?? busy;
   const allowSaveFile = waypointList.length > 0;
   const allowTransfer = allowSaveFile && module && module !== "Spectator";
 
-  function button() {
-    if(busy) {
-      return <Fab
-        variant="extended"
-        color="warning"
-        onClick={props.onAbort}
-      >
-        <Typography variant="button" pr={2}>
-          <b>Abort transfer</b>
-        </Typography>
-        <SendIcon />
-      </Fab>;
+    function button() {
+    // Use our override instead of raw Redux busy
+    const isRunning = props.transferRunning ?? effectiveBusy;
+    const isAborting = props.transferAborting === true;
+
+    if (isRunning) {
+      return (
+        <Fab
+          variant="extended"
+          color={isAborting ? "error" : "warning"}
+          onClick={isAborting ? undefined : props.onAbort}
+          disabled={isAborting}
+        >
+          <Typography variant="button" pr={2}>
+            <b>{isAborting ? "Aborting..." : "Abort transfer"}</b>
+          </Typography>
+          <SendIcon />
+        </Fab>
+      );
     } else {
-      return <Fab
-        variant="extended"
-        color="primary"
-        onClick={props.onTransfer}
-        disabled={!allowTransfer}
-      >
-        <Typography variant="button" pr={2}>
-          <b>Transfer to DCS</b>
-        </Typography>
-        <SendIcon />
-      </Fab>;
+      return (
+        <Fab
+          variant="extended"
+          color="primary"
+          onClick={props.onTransfer}
+          disabled={!allowTransfer}
+        >
+          <Typography variant="button" pr={2}>
+            <b>Transfer to DCS</b>
+          </Typography>
+          <SendIcon />
+        </Fab>
+      );
     }
   }
 
