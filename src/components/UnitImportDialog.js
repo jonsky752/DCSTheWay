@@ -5,7 +5,6 @@ import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import {
   Dialog,
   DialogContent,
-  DialogActions,
   Button,
   Typography,
   Box,
@@ -32,6 +31,10 @@ import {
 
 const { ipcRenderer } = window.require("electron");
 
+// Top-of-file config
+const SHOW_WITHIN_FILTER = false;
+const MAX_WITHIN_RADIUS = 10;
+
 // ---- LocalStorage keys (UI prefs) ----
 const LS_PREFIX = "theway.unitImport.";
 const LS_KEYS = {
@@ -44,6 +47,7 @@ const LS_KEYS = {
   colWidths: `${LS_PREFIX}colWidths`,
   coordFmt: `${LS_PREFIX}coordFmt`,
   colVis: `${LS_PREFIX}colVis`,
+  categoryFilter: `${LS_PREFIX}categoryFilter`,
 };
 
 const readLS = (key, fallback) => {
@@ -87,7 +91,7 @@ const getCatSubForType = (type) => {
   if (!type) return { category: "Unknown", subcategory: "Unknown" };
   return UNIT_LOOKUP[type] || { category: "Unknown", subcategory: "Unknown" };
 };
-  
+
 // ===== Coordinate converters (matching your Convertors.js behaviour) =====
 const decimalToDMM = (decimalCoordinate) => {
   const deg = Math.abs(Math.trunc(decimalCoordinate));
@@ -184,58 +188,56 @@ const formatPosition = (lat, lon, fmt) => {
   }
 
   if (fmt === "DMS") {
-  const ns = lat >= 0 ? "N" : "S";
-  const ew = lon >= 0 ? "E" : "W";
+    const ns = lat >= 0 ? "N" : "S";
+    const ew = lon >= 0 ? "E" : "W";
 
-  const pad2 = (n) => String(n).padStart(2, "0");
+    const pad2 = (n) => String(n).padStart(2, "0");
 
-  const toDMSParts = (absDec) => {
-    const deg = Math.floor(absDec);
-    const minDec = (absDec - deg) * 60;
-    const min = Math.floor(minDec);
-    const sec = Math.floor((minDec - min) * 60);
-    return { deg, min, sec };
-  };
+    const toDMSParts = (absDec) => {
+      const deg = Math.floor(absDec);
+      const minDec = (absDec - deg) * 60;
+      const min = Math.floor(minDec);
+      const sec = Math.floor((minDec - min) * 60);
+      return { deg, min, sec };
+    };
 
-  const d1 = toDMSParts(Math.abs(lat));
-  const d2 = toDMSParts(Math.abs(lon));
+    const d1 = toDMSParts(Math.abs(lat));
+    const d2 = toDMSParts(Math.abs(lon));
 
-  // Note: no spaces like your example: N42°07'07"
-  return `${ns}${d1.deg}°${pad2(d1.min)}'${pad2(d1.sec)}"  ${ew}${d2.deg}°${pad2(d2.min)}'${pad2(d2.sec)}"`;
+    return `${ns}${d1.deg}°${pad2(d1.min)}'${pad2(d1.sec)}"  ${ew}${d2.deg}°${pad2(d2.min)}'${pad2(d2.sec)}"`;
   }
 
   if (fmt === "DMS_S") {
-  const ns = lat >= 0 ? "N" : "S";
-  const ew = lon >= 0 ? "E" : "W";
+    const ns = lat >= 0 ? "N" : "S";
+    const ew = lon >= 0 ? "E" : "W";
 
-  const pad2 = (n) => String(n).padStart(2, "0");
-  const padSec2dp = (s) => s.toFixed(2).padStart(5, "0"); // 0.00 -> "00.00", 6.78 -> "06.78"
+    const pad2 = (n) => String(n).padStart(2, "0");
+    const padSec2dp = (s) => s.toFixed(2).padStart(5, "0");
 
-  const toDMSSParts = (absDec) => {
-    let deg = Math.floor(absDec);
-    let minDec = (absDec - deg) * 60;
-    let min = Math.floor(minDec);
-    let sec = (minDec - min) * 60;
+    const toDMSSParts = (absDec) => {
+      let deg = Math.floor(absDec);
+      let minDec = (absDec - deg) * 60;
+      let min = Math.floor(minDec);
+      let sec = (minDec - min) * 60;
 
-    // Handle rounding rollover (e.g. 59.999 -> 60.00)
-    sec = Number(sec.toFixed(2));
-    if (sec >= 60) {
-      sec = 0;
-      min += 1;
-      if (min >= 60) {
-        min = 0;
-        deg += 1;
+      sec = Number(sec.toFixed(2));
+      if (sec >= 60) {
+        sec = 0;
+        min += 1;
+        if (min >= 60) {
+          min = 0;
+          deg += 1;
+        }
       }
-    }
 
-    return { deg, min, sec };
-  };
+      return { deg, min, sec };
+    };
 
-  const d1 = toDMSSParts(Math.abs(lat));
-  const d2 = toDMSSParts(Math.abs(lon));
+    const d1 = toDMSSParts(Math.abs(lat));
+    const d2 = toDMSSParts(Math.abs(lon));
 
-  return `${ns}${d1.deg}°${pad2(d1.min)}'${padSec2dp(d1.sec)}"  ${ew}${d2.deg}°${pad2(d2.min)}'${padSec2dp(d2.sec)}"`;
-}
+    return `${ns}${d1.deg}°${pad2(d1.min)}'${padSec2dp(d1.sec)}"  ${ew}${d2.deg}°${pad2(d2.min)}'${padSec2dp(d2.sec)}"`;
+  }
 
   if (fmt === "DMM") {
     const ns = lat >= 0 ? "N" : "S";
@@ -253,28 +255,26 @@ const formatPosition = (lat, lon, fmt) => {
 };
 
 export default function UnitImportDialog({ open, onClose }) {
-  // Header controls (remembered)
   const [intelCoalitionFilter, setIntelCoalitionFilter] = React.useState(readLS(LS_KEYS.coalition, "All"));
-  const [intelUnitType, setIntelUnitType] = React.useState(readLS(LS_KEYS.type, "Ground")); // Ground/Air/Naval/All
+  const [intelUnitType, setIntelUnitType] = React.useState(readLS(LS_KEYS.type, "Ground"));
   const [intelOrigin, setIntelOrigin] = React.useState(readLS(LS_KEYS.origin, "Camera position"));
 
   const [intelWithinEnabled, setIntelWithinEnabled] = React.useState(true);
-  const [unitsMode, setUnitsMode] = React.useState(readLS(LS_KEYS.unitsMode, "Imperial")); // Imperial|Metric
-
-  const [intelRadius, setIntelRadius] = React.useState(2);
-
-  const [coordFmt, setCoordFmt] = React.useState(readLS(LS_KEYS.coordFmt, "DEC")); // DEC/DMS/DMM/MGRS
-
+  const [unitsMode, setUnitsMode] = React.useState(readLS(LS_KEYS.unitsMode, "Imperial"));
+  const [intelRadius, setIntelRadius] = React.useState(() => {
+    const saved = Number(readLS(LS_KEYS.withinRadius, 2));
+    return Number.isFinite(saved)
+      ? Math.min(MAX_WITHIN_RADIUS, Math.max(1, Math.round(saved)))
+      : 2;
+  });
+  const [coordFmt, setCoordFmt] = React.useState(readLS(LS_KEYS.coordFmt, "DEC"));
   const [isIntelLoading, setIsIntelLoading] = React.useState(false);
 
-  // Last known DCS point (fallback for BRG/RNG if snapshot origin missing)
   const { lat: dcsLat, long: dcsLon } = useSelector((state) => state.dcsPoint);
 
-  // Sorting
-  const [orderBy, setOrderBy] = React.useState("rngNm");
-  const [order, setOrder] = React.useState("asc");
+  const [orderBy, setOrderBy] = React.useState("selected");
+  const [order, setOrder] = React.useState("desc");
 
-  // Column widths (remembered)
   const defaultColWidths = {
     coalition: 110,
     type: 170,
@@ -295,69 +295,124 @@ export default function UnitImportDialog({ open, onClose }) {
     return saved && typeof saved === "object" ? { ...defaultColWidths, ...saved } : defaultColWidths;
   });
 
-  
-
-// Column visibility (remembered). Import is always shown.
-const defaultColVis = {
-  coalition: true,
-  type: true,
-  category: true,
-  subcategory: true,
-  capability: true,
-  name: true,
-  position: true,
-  elev: true,
-  brgDeg: true,
-  rng: true,
+  const defaultColVis = {
+    coalition: true,
+    type: true,
+    category: true,
+    subcategory: true,
+    capability: true,
+    name: true,
+    position: true,
+    elev: true,
+    brgDeg: true,
+    rng: true,
     speed: true,
-};
+  };
 
-const [colVis, setColVis] = React.useState(() => {
-  const saved = readLSJson(LS_KEYS.colVis, null);
-  return saved && typeof saved === "object" ? { ...defaultColVis, ...saved } : defaultColVis;
-});
+  const [colVis, setColVis] = React.useState(() => {
+    const saved = readLSJson(LS_KEYS.colVis, null);
+    return saved && typeof saved === "object" ? { ...defaultColVis, ...saved } : defaultColVis;
+  });
 
-React.useEffect(() => {
-  const t = window.setTimeout(() => writeLSJson(LS_KEYS.colVis, colVis), 200);
-  return () => window.clearTimeout(t);
-}, [colVis]);
+  const [categoryAnchorEl, setCategoryAnchorEl] = React.useState(null);
+  const categoryMenuOpen = Boolean(categoryAnchorEl);
+  const [selectedCategories, setSelectedCategories] = React.useState(() =>
+    readLSJson(LS_KEYS.categoryFilter, [])
+  );
 
-const isColVisible = (key) => {
-    if (key === "import") return true; // always shown
+  React.useEffect(() => {
+    const t = window.setTimeout(() => writeLSJson(LS_KEYS.colVis, colVis), 200);
+    return () => window.clearTimeout(t);
+  }, [colVis]);
+
+  React.useEffect(() => {
+    const t = window.setTimeout(() => writeLSJson(LS_KEYS.categoryFilter, selectedCategories), 200);
+    return () => window.clearTimeout(t);
+  }, [selectedCategories]);
+
+  const isColVisible = (key) => {
+    if (key === "import") return true;
     return !!colVis[key];
   };
 
-const visibleColCount = React.useMemo(() => {
-  const keys = ["coalition","type","category","subcategory","capability","name","position","elev","brgDeg","rng","speed","import"];
-  return keys.reduce((acc, k) => acc + (isColVisible(k) ? 1 : 0), 0);
-}, [colVis]);
+  const visibleColCount = React.useMemo(() => {
+    const keys = [
+      "coalition",
+      "type",
+      "category",
+      "subcategory",
+      "capability",
+      "name",
+      "position",
+      "elev",
+      "brgDeg",
+      "rng",
+      "speed",
+      "import",
+    ];
+    return keys.reduce((acc, k) => acc + (isColVisible(k) ? 1 : 0), 0);
+  }, [colVis]);
+
   const dragRef = React.useRef(null);
+  const refreshMinTimerRef = React.useRef(0);
 
-  const refreshMinTimerRef = React.useRef(0); // store "min active until" timestamp
-
-  
-  // Column show/hide menu
   const [colsAnchorEl, setColsAnchorEl] = React.useState(null);
   const colsMenuOpen = Boolean(colsAnchorEl);
 
   const toggleCol = (key) => setColVis((prev) => ({ ...prev, [key]: !prev[key] }));
-// Snapshot + import selection
+
   const [snapshot, setSnapshot] = React.useState([]);
   const [importMap, setImportMap] = React.useState({});
   const prevPosRef = React.useRef(new Map());
 
-  
-  // Snapshot timing for speed calculation
   const lastSnapshotAtRef = React.useRef(0);
   const prevSnapshotAtRef = React.useRef(0);
 
-  // Snapshot age display (bottom-right)
   const [snapshotAgeText, setSnapshotAgeText] = React.useState("No snapshot");
-// Snapshot reference point for BRG/RNG + Within
   const [refPoint, setRefPoint] = React.useState(null);
 
-  // Keep the snapshot age label ticking while the dialog is open.
-  // (We store the snapshot timestamp in a ref, so we need an interval to force UI updates.)
+  const availableCategories = React.useMemo(() => {
+  const set = new Set();
+
+  Object.values(UNIT_LOOKUP).forEach((entry) => {
+    if (entry?.category) set.add(entry.category);
+  });
+  return Array.from(set).sort((a, b) =>
+    a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" })
+  );
+}, []);
+
+  React.useEffect(() => {
+    if (!availableCategories.length) return;
+
+    setSelectedCategories((prev) => {
+      const existing = Array.isArray(prev) ? prev.filter((c) => availableCategories.includes(c)) : [];
+      return existing.length ? existing : [...availableCategories];
+    });
+  }, [availableCategories]);
+
+  const toggleCategory = (category) => {
+    setSelectedCategories((prev) =>
+      prev.includes(category)
+        ? prev.filter((c) => c !== category)
+        : [...prev, category]
+    );
+  };
+
+  const allCategoriesSelected =
+    availableCategories.length > 0 &&
+    selectedCategories.length === availableCategories.length;
+
+  const someCategoriesSelected =
+    selectedCategories.length > 0 &&
+    selectedCategories.length < availableCategories.length;
+
+  const toggleAllCategories = () => {
+    setSelectedCategories((prev) =>
+      prev.length === availableCategories.length ? [] : [...availableCategories]
+    );
+  };
+
   React.useEffect(() => {
     if (!open) return;
 
@@ -386,11 +441,9 @@ const visibleColCount = React.useMemo(() => {
     return () => window.clearInterval(id);
   }, [open]);
 
-  // Persist user choices
   React.useEffect(() => writeLS(LS_KEYS.coalition, intelCoalitionFilter), [intelCoalitionFilter]);
   React.useEffect(() => writeLS(LS_KEYS.type, intelUnitType), [intelUnitType]);
   React.useEffect(() => writeLS(LS_KEYS.origin, intelOrigin), [intelOrigin]);
-  //React.useEffect(() => writeLS(LS_KEYS.withinEnabled, String(intelWithinEnabled)), [intelWithinEnabled]);
   React.useEffect(() => writeLS(LS_KEYS.unitsMode, unitsMode), [unitsMode]);
   React.useEffect(() => writeLS(LS_KEYS.coordFmt, coordFmt), [coordFmt]);
 
@@ -398,13 +451,11 @@ const visibleColCount = React.useMemo(() => {
     if (Number.isFinite(Number(intelRadius))) writeLS(LS_KEYS.withinRadius, String(intelRadius));
   }, [intelRadius]);
 
-  // Persist col widths (debounced)
   React.useEffect(() => {
     const t = window.setTimeout(() => writeLSJson(LS_KEYS.colWidths, colWidths), 200);
     return () => window.clearTimeout(t);
   }, [colWidths]);
 
-  // ===== Helper math =====
   const toRad = (deg) => (deg * Math.PI) / 180;
   const toDeg = (rad) => (rad * 180) / Math.PI;
 
@@ -431,7 +482,6 @@ const visibleColCount = React.useMemo(() => {
   const nmToKm = (nm) => nm * 1.852;
   const kmToNm = (km) => km / 1.852;
 
-  // ===== wsType helpers =====
   const getWsLevels = (u) => {
     const T = u?.Type;
     const toNum = (v) => {
@@ -446,88 +496,80 @@ const visibleColCount = React.useMemo(() => {
   };
 
   const classifyAndCapability = (u) => {
-      const { l1, l2, l3 } = getWsLevels(u);
+    const { l1, l2, l3 } = getWsLevels(u);
 
-      // --- Base classification from wsType (good for vehicles/SAM/etc) ---
-      let cls = "Unknown";
-      if (l1 === 1) cls = "Air";
-      else if (l1 === 3) cls = "Naval";
-      else if (l1 === 4) cls = "Weapon";
-      else if (l1 === 5) cls = "Static";
-      else if (l1 === 2) {
-        if (l2 === 16) cls = "SAM/Radar";
-        else if (l2 === 17) cls = "Armour";
-        else if (l2 === 20) cls = "Infantry";
-        else cls = "Vehicle";
-        if ([101, 102, 103, 105].includes(l3)) cls = "SAM/Radar";
-      }
+    let cls = "Unknown";
+    if (l1 === 1) cls = "Air";
+    else if (l1 === 3) cls = "Naval";
+    else if (l1 === 4) cls = "Weapon";
+    else if (l1 === 5) cls = "Static";
+    else if (l1 === 2) {
+      if (l2 === 16) cls = "SAM/Radar";
+      else if (l2 === 17) cls = "Armour";
+      else if (l2 === 20) cls = "Infantry";
+      else cls = "Vehicle";
+      if ([101, 102, 103, 105].includes(l3)) cls = "SAM/Radar";
+    }
 
-      let cap = "";
-      if (l3 === 25) cap = "None"; // was "No Weapon"
-      else if (l3 === 26) cap = "Gun";
-      else if (l3 === 27) cap = "Missile";
-      else if (l3 === 104) cap = "Gun + Missile";
-      else if (l3 === 101) cap = "Radar";
-      else if (l3 === 102) cap = "Radar + Missile";
-      else if (l3 === 103) cap = "Radar + Gun + Missile";
-      else if (l3 === 105) cap = "Radar + Gun";
+    let cap = "";
+    if (l3 === 25) cap = "None";
+    else if (l3 === 26) cap = "Gun";
+    else if (l3 === 27) cap = "Missile";
+    else if (l3 === 104) cap = "Gun + Missile";
+    else if (l3 === 101) cap = "Radar";
+    else if (l3 === 102) cap = "Radar + Missile";
+    else if (l3 === 103) cap = "Radar + Gun + Missile";
+    else if (l3 === 105) cap = "Radar + Gun";
 
-      const radarActive = u?.Flags?.RadarActive ?? u?.flags?.RadarActive;
-      if (radarActive && cap && !cap.includes("Radar")) cap = `Radar + ${cap}`;
-      if (radarActive && !cap) cap = "Radar";
-      if (!cap) cap = "—";
+    const radarActive = u?.Flags?.RadarActive ?? u?.flags?.RadarActive;
+    if (radarActive && cap && !cap.includes("Radar")) cap = `Radar + ${cap}`;
+    if (radarActive && !cap) cap = "Radar";
+    if (!cap) cap = "—";
 
-      // --- Infantry/MANPAD overrides (use DCS type string; wsType is too coarse for infantry) ---
-      const typeName =
-        (typeof u?.type === "string" && u.type) ||
-        (typeof u?.Type === "string" && u.Type) ||
-        (typeof u?.unitType === "string" && u.unitType) ||
-        "";
-      const t = typeName.toLowerCase();
+    const typeName =
+      (typeof u?.type === "string" && u.type) ||
+      (typeof u?.Type === "string" && u.Type) ||
+      (typeof u?.unitType === "string" && u.unitType) ||
+      "";
+    const t = typeName.toLowerCase();
 
-      const looksInfantry =
-        t.includes("soldier") || t.includes("infantry") || t.includes("paratrooper") || t.includes("jtac");
-      const isJtac = t.includes("jtac");
+    const looksInfantry =
+      t.includes("soldier") || t.includes("infantry") || t.includes("paratrooper") || t.includes("jtac");
+    const isJtac = t.includes("jtac");
 
-      const isManpadWord = t.includes("manpad") || t.includes("stinger") || t.includes("igla") || t.includes("sa-18");
-      const isCommSupport = /\b(comm|dsr)\b/i.test(typeName); // reload/support only (can't fire)
-      const isRpg = t.includes("rpg");
+    const isManpadWord = t.includes("manpad") || t.includes("stinger") || t.includes("igla") || t.includes("sa-18");
+    const isCommSupport = /\b(comm|dsr)\b/i.test(typeName);
+    const isRpg = t.includes("rpg");
 
-      if (isJtac) {
-        cls = "Infantry";
-        cap = "None";
-      } else if (isCommSupport && isManpadWord) {
-        // Stinger/Igla comm/dsr: support only
-        cls = "Infantry";
-        cap = "None";
-      } else if (isManpadWord) {
-        // Actual MANPAD shooter
-        cls = "MANPAD";
-        cap = "IR Missile";
-      } else if (looksInfantry) {
-        cls = "Infantry";
-        cap = isRpg ? "RPG" : "Small Arms";
-      }
+    if (isJtac) {
+      cls = "Infantry";
+      cap = "None";
+    } else if (isCommSupport && isManpadWord) {
+      cls = "Infantry";
+      cap = "None";
+    } else if (isManpadWord) {
+      cls = "MANPAD";
+      cap = "IR Missile";
+    } else if (looksInfantry) {
+      cls = "Infantry";
+      cap = isRpg ? "RPG" : "Small Arms";
+    }
 
-      // Normalise any remaining legacy labels
-      if (cap === "No Weapon") cap = "None";
+    if (cap === "No Weapon") cap = "None";
 
-      return { cls, cap, l1 };
-    };
+    return { cls, cap, l1 };
+  };
 
-const refPointEffective = React.useMemo(() => {
+  const refPointEffective = React.useMemo(() => {
     if (refPoint && Number.isFinite(refPoint.lat) && Number.isFinite(refPoint.lon)) return refPoint;
     if (typeof dcsLat === "number" && typeof dcsLon === "number") return { lat: dcsLat, lon: dcsLon };
     return null;
   }, [refPoint, dcsLat, dcsLon]);
 
-  // ===== Receive snapshot results =====
   React.useEffect(() => {
     const onSnapshot = (_event, payload) => {
       try {
-        // Allow for possible wrapper shapes from main process: { payload: {...} } etc.
         const msg = payload && payload.payload ? payload.payload : payload;
-
         const units = Array.isArray(msg) ? msg : msg && Array.isArray(msg.units) ? msg.units : [];
 
         const origin = !Array.isArray(msg) && msg && msg.origin ? msg.origin : null;
@@ -598,24 +640,29 @@ const refPointEffective = React.useMemo(() => {
           })
           .filter(Boolean);
 
-        const nextMap = {};
-        for (const u of normalized) nextMap[u.id] = true;
-
         setSnapshot(normalized);
-        setImportMap(nextMap);
+
+        setImportMap((prev) => {
+          const next = {};
+          for (const u of normalized) {
+            next[u.id] = !!prev?.[u.id];
+          }
+          return next;
+        });
+
         lastSnapshotAtRef.current = Date.now();
         setSnapshotAgeText("0s");
       } finally {
         const releaseLoading = () => setIsIntelLoading(false);
 
-const now = Date.now();
-const minUntil = refreshMinTimerRef.current || now;
+        const now = Date.now();
+        const minUntil = refreshMinTimerRef.current || now;
 
-if (now >= minUntil) {
-  releaseLoading();
-} else {
-  setTimeout(releaseLoading, minUntil - now);
-}
+        if (now >= minUntil) {
+          releaseLoading();
+        } else {
+          setTimeout(releaseLoading, minUntil - now);
+        }
       }
     };
 
@@ -623,7 +670,6 @@ if (now >= minUntil) {
     return () => ipcRenderer.removeListener("intel:snapshotResult", onSnapshot);
   }, []);
 
-  // Crosshair on while open
   React.useEffect(() => {
     if (!open) return;
     ipcRenderer.send("messageToDcs", { type: "crosshair", payload: "true" });
@@ -633,66 +679,81 @@ if (now >= minUntil) {
   }, [open]);
 
   const handleSort = (key) => {
-    if (orderBy === key) setOrder((prev) => (prev === "asc" ? "desc" : "asc"));
-    else {
+    if (orderBy === key) {
+      setOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
       setOrderBy(key);
-      setOrder("asc");
+      setOrder(key === "selected" ? "desc" : "asc");
     }
   };
 
   const refresh = React.useCallback(() => {
-  // Clear any existing minimum timer
-  if (refreshMinTimerRef.current) {
-    clearTimeout(refreshMinTimerRef.current);
-    refreshMinTimerRef.current = null;
-  }
+    if (refreshMinTimerRef.current) {
+      clearTimeout(refreshMinTimerRef.current);
+      refreshMinTimerRef.current = null;
+    }
 
-  // Mark as loading immediately
-  setIsIntelLoading(true);
+    setIsIntelLoading(true);
 
-  // Enforce minimum visible "active" time (2s)
-  const minActiveUntil = Date.now() + 2000;
+    const minActiveUntil = Date.now() + 2000;
 
-  // Store current positions for moved comparison
-  prevSnapshotAtRef.current = lastSnapshotAtRef.current || Date.now();
-  const prev = new Map();
-  for (const u of snapshot) prev.set(u.id, { lat: u.lat, lon: u.lon });
-  prevPosRef.current = prev;
+    prevSnapshotAtRef.current = lastSnapshotAtRef.current || Date.now();
+    const prev = new Map();
+    for (const u of snapshot) prev.set(u.id, { lat: u.lat, lon: u.lon });
+    prevPosRef.current = prev;
 
-  const coalition = (intelCoalitionFilter || "All").toLowerCase();
-  const origin = intelOrigin === "Ownship" ? "ownship" : "camera";
-  const domain = intelUnitType === "All" ? "all" : (intelUnitType || "Ground").toLowerCase();
+    const coalition = (intelCoalitionFilter || "All").toLowerCase();
+    const origin = intelOrigin === "Ownship" ? "ownship" : "camera";
+    const domain = intelUnitType === "All" ? "all" : (intelUnitType || "Ground").toLowerCase();
 
-  const radiusNm =
-    intelWithinEnabled
-      ? Math.max(0, unitsMode === "Metric" ? kmToNm(Number(intelRadius) || 0) : Number(intelRadius) || 0)
-      : 9999;
+    const withinEnabledEffective = SHOW_WITHIN_FILTER ? intelWithinEnabled : true;
 
-  ipcRenderer.send("messageToDcs", {
-    cmd: "INTEL_SNAPSHOT",
-    radiusNm,
-    coalition,
-    domain,
-    origin,
-    type: "intel_snapshot",
-    payload: { radiusNm, coalition, domain, origin },
-  });
+    const radiusNm =
+      withinEnabledEffective
+        ? Math.min(
+            MAX_WITHIN_RADIUS,
+            Math.max(
+              1,
+              unitsMode === "Metric"
+                ? kmToNm(Number(intelRadius) || 0)
+                : Number(intelRadius) || 0
+            )
+          )
+        : 9999;
 
-  // Store when we are allowed to clear loading
-  refreshMinTimerRef.current = minActiveUntil;
-}, [
-  snapshot,
-  intelCoalitionFilter,
-  intelUnitType,
-  intelOrigin,
-  intelWithinEnabled,
-  intelRadius,
-  unitsMode,
-]);
-  // NOTE: No automatic refresh on open (manual Refresh only)
+    ipcRenderer.send("messageToDcs", {
+      cmd: "INTEL_SNAPSHOT",
+      radiusNm,
+      coalition,
+      domain,
+      origin,
+      type: "intel_snapshot",
+      payload: { radiusNm, coalition, domain, origin },
+    });
+
+    refreshMinTimerRef.current = minActiveUntil;
+  }, [
+    snapshot,
+    intelCoalitionFilter,
+    intelUnitType,
+    intelOrigin,
+    intelWithinEnabled,
+    intelRadius,
+    unitsMode,
+  ]);
 
   const rows = React.useMemo(() => {
-    const radiusNm = Math.max(0, unitsMode === "Metric" ? kmToNm(Number(intelRadius) || 0) : Number(intelRadius) || 0);
+    const withinEnabledEffective = SHOW_WITHIN_FILTER ? intelWithinEnabled : true;
+
+    const radiusNm = Math.min(
+      MAX_WITHIN_RADIUS,
+      Math.max(
+        1,
+        unitsMode === "Metric"
+          ? kmToNm(Number(intelRadius) || 0)
+          : Number(intelRadius) || 0
+      )
+    );
 
     return snapshot
       .map((u) => {
@@ -706,11 +767,10 @@ if (now >= minUntil) {
 
         const prev = prevPosRef.current.get(u.id);
         const movedM = prev ? haversineMeters(prev.lat, prev.lon, u.lat, u.lon) : 0;
-        const isStatic = prev ? movedM < 5 : true;
 
         const dtSec = prev ? Math.max(0.001, (lastSnapshotAtRef.current - prevSnapshotAtRef.current) / 1000) : 0;
         const speedMS = prev && dtSec > 0 ? movedM / dtSec : 0;
-        const speedDisplay = unitsMode === "Metric" ? speedMS * 3.6 : speedMS * 1.94384; // km/h or kt
+        const speedDisplay = unitsMode === "Metric" ? speedMS * 3.6 : speedMS * 1.94384;
 
         const displayRng = unitsMode === "Metric" ? nmToKm(rngNm) : rngNm;
         const displayElev = unitsMode === "Metric" ? u.elevM : metersToFeet(u.elevM);
@@ -734,51 +794,76 @@ if (now >= minUntil) {
           displayRng,
           displayElev,
           speed: speedDisplay,
-          moved: prev ? movedM >= 5 : false, // <— drives red outline
+          moved: prev ? movedM >= 5 : false,
         };
       })
       .filter((r) => {
         if (intelCoalitionFilter !== "All" && r.coalition !== intelCoalitionFilter) return false;
 
-        // Type filter
         if (intelUnitType !== "All") {
           if (intelUnitType === "Ground" && r.domain !== "Ground") return false;
           if (intelUnitType === "Air" && r.domain !== "Air") return false;
           if (intelUnitType === "Naval" && r.domain !== "Naval") return false;
         }
 
+        if (selectedCategories.length > 0 && !selectedCategories.includes(r.category)) return false;
+
         return true;
       })
-      .filter((r) => (intelWithinEnabled ? r.rngNm <= radiusNm : true));
-  }, [snapshot, intelCoalitionFilter, intelUnitType, intelWithinEnabled, intelRadius, unitsMode, refPointEffective, coordFmt]);
+      .filter((r) => (withinEnabledEffective ? r.rngNm <= radiusNm : true));
+  }, [
+    snapshot,
+    intelCoalitionFilter,
+    intelUnitType,
+    intelWithinEnabled,
+    intelRadius,
+    unitsMode,
+    refPointEffective,
+    coordFmt,
+    selectedCategories,
+  ]);
 
   const sortedRows = React.useMemo(() => {
     const dir = order === "asc" ? 1 : -1;
     const key = orderBy;
 
-    const getter = (r) => {
-      if (key === "rng") return r.displayRng;
-      if (key === "elev") return r.displayElev;
-      if (key === "speed") return r.speed;
-      return r[key];
+    const getter = (r, sortKey) => {
+      if (sortKey === "rng") return r.displayRng;
+      if (sortKey === "elev") return r.displayElev;
+      if (sortKey === "speed") return r.speed;
+      if (sortKey === "selected") return importMap[r.id] ? 1 : 0;
+      return r[sortKey];
     };
 
-    const cmp = (a, b) => {
-      const va = getter(a);
-      const vb = getter(b);
-      if (typeof va === "number" && typeof vb === "number") return (va - vb) * dir;
+    const compareValues = (aVal, bVal, direction = 1) => {
+      if (typeof aVal === "number" && typeof bVal === "number") {
+        return (aVal - bVal) * direction;
+      }
+
       return (
-        String(va ?? "").localeCompare(String(vb ?? ""), undefined, { numeric: true, sensitivity: "base" }) * dir
+        String(aVal ?? "").localeCompare(String(bVal ?? ""), undefined, {
+          numeric: true,
+          sensitivity: "base",
+        }) * direction
       );
     };
 
-    return [...rows].sort(cmp);
-  }, [rows, order, orderBy]);
+    return [...rows].sort((a, b) => {
+      const primary = compareValues(getter(a, key), getter(b, key), dir);
+      if (primary !== 0) return primary;
+
+      const secondary = compareValues(getter(a, "rng"), getter(b, "rng"), 1);
+      if (secondary !== 0) return secondary;
+
+      return compareValues(getter(a, "name"), getter(b, "name"), 1);
+    });
+  }, [rows, order, orderBy, importMap]);
 
   const selectedCount = React.useMemo(
     () => sortedRows.reduce((acc, r) => acc + (importMap[r.id] ? 1 : 0), 0),
     [sortedRows, importMap]
   );
+
   const allSelected = sortedRows.length > 0 && selectedCount === sortedRows.length;
   const noneSelected = selectedCount === 0;
   const someSelected = !noneSelected && !allSelected;
@@ -818,7 +903,7 @@ if (now >= minUntil) {
     whiteSpace: "nowrap",
     overflow: "hidden",
     textOverflow: "ellipsis",
-fontSize: "0.70rem",
+    fontSize: "0.70rem",
   });
 
   const headCellSx = (key, isLast = false) => ({
@@ -827,7 +912,6 @@ fontSize: "0.70rem",
     backgroundColor: "background.paper",
     userSelect: "none",
     fontSize: "0.70rem",
-    // IMPORTANT: keep header pinned while TableContainer scrolls
     position: "sticky",
     top: 0,
     zIndex: 3,
@@ -863,8 +947,7 @@ fontSize: "0.70rem",
     />
   );
 
-  // ---- Import checkbox visuals (no green fill; moved => red outline) ----
-  const mkBox = (border, tickColor) => {
+  const mkBox = (border, tickColor, fill = "transparent") => {
     const box = (withTick) => (
       <span
         style={{
@@ -876,13 +959,13 @@ fontSize: "0.70rem",
           alignItems: "center",
           justifyContent: "center",
           boxSizing: "border-box",
-          background: "transparent",
+          background: withTick ? fill : "transparent",
           fontSize: 13,
           lineHeight: 1,
-          color: tickColor,
+          color: withTick ? tickColor : "transparent",
         }}
       >
-        {withTick ? "✓" : ""}
+        ✓
       </span>
     );
     return { icon: box(false), checkedIcon: box(true) };
@@ -890,32 +973,37 @@ fontSize: "0.70rem",
 
   const normalBox = mkBox("rgba(255,255,255,0.45)", "rgba(255,255,255,0.9)");
   const movedBox = mkBox("#c62828", "rgba(255,255,255,0.9)");
+  const greenBox = mkBox("#4caf50", "#111", "#4caf50");
 
   const coordFmtOptions = [
-  { value: "DEC", label: "Dec" },
-  { value: "DMS", label: "DMS" },
-  { value: "DMS_S", label: "DMS.S" }, // <— add
-  { value: "DMM", label: "DMM" },
-  { value: "MGRS", label: "MGRS" },
-];
-
-  const cycleCoordFmt = (dir) => {
-    const idx = coordFmtOptions.findIndex((o) => o.value === coordFmt);
-    const next = (idx + dir + coordFmtOptions.length) % coordFmtOptions.length;
-    setCoordFmt(coordFmtOptions[next].value);
-  };
+    { value: "DEC", label: "Dec" },
+    { value: "DMS", label: "DMS" },
+    { value: "DMS_S", label: "DMS.S" },
+    { value: "DMM", label: "DMM" },
+    { value: "MGRS", label: "MGRS" },
+  ];
 
   const elevUnitLabel = unitsMode === "Metric" ? "m" : "ft";
   const speedUnitLabel = unitsMode === "Metric" ? "km/h" : "kt";
 
-  // Compact dropdown widths (rough “just enough”)
   const fcCompact = (min) => ({ minWidth: min, width: "auto" });
   const selectCompactSx = { "& .MuiSelect-select": { py: 1.0 } };
 
   return (
     <Dialog open={open} onClose={onClose} fullScreen PaperProps={{ sx: { width: "100vw", height: "100vh" } }}>
-      <DialogContent sx={{ px:0.2, py: 0.8, display: "flex", flexDirection: "column", gap: 1.0, overflow: "hidden", minHeight: 0, flex: 1, position: "relative" }}>
-        {/* Header toolbar: Coalition / Type / Within / Units / of / Origin */}
+      <DialogContent
+        sx={{
+          px: 0.2,
+          py: 0.8,
+          display: "flex",
+          flexDirection: "column",
+          gap: 1.0,
+          overflow: "hidden",
+          minHeight: 0,
+          flex: 1,
+          position: "relative",
+        }}
+      >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.2, flexWrap: "wrap" }}>
           <FormControl size="small" sx={fcCompact(120)}>
             <InputLabel>Coalition</InputLabel>
@@ -947,37 +1035,43 @@ fontSize: "0.70rem",
             </Select>
           </FormControl>
 
-          {/* Within (tight spacing) */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
-            <Checkbox checked={intelWithinEnabled} onChange={(e) => setIntelWithinEnabled(e.target.checked)} />
-            <Typography sx={{ userSelect: "none" }}>Within</Typography>
+  {SHOW_WITHIN_FILTER && (
+    <Checkbox
+      checked={intelWithinEnabled}
+      onChange={(e) => setIntelWithinEnabled(e.target.checked)}
+      icon={greenBox.icon}
+      checkedIcon={greenBox.checkedIcon}
+    />
+  )}
 
-            <Box
-              onWheel={(e) => {
-                // only adjust radius when Within is enabled
-                if (!intelWithinEnabled) return;
+  <Typography sx={{ userSelect: "none" }}>Within</Typography>
 
-                e.preventDefault();
-
-                const dir = e.deltaY > 0 ? -1 : 1; // wheel down = smaller, wheel up = bigger
-                setIntelRadius((prev) => {
-                  const n = Number(prev) || 0;
-                  return Math.max(0, Math.round(n + dir));
-                });
-              }}
-              sx={{ display: "flex", alignItems: "center" }}
-              title="Mouse wheel changes radius"
-            >
-              <TextField
-                size="small"
-                type="number"
-                inputProps={{ min: 0, step: 1 }}
-                value={intelRadius}
-                onChange={(e) => setIntelRadius(Math.max(0, Math.round(Number(e.target.value) || 0)))}
-                sx={{ width: 85 }}
-              />
-            </Box>
-          </Box>
+  <Box
+    onWheel={(e) => {
+      e.preventDefault();
+      const dir = e.deltaY > 0 ? -1 : 1;
+      setIntelRadius((prev) => {
+        const n = Number(prev) || 0;
+        return Math.min(MAX_WITHIN_RADIUS, Math.max(1, Math.round(n + dir)));
+      });
+    }}
+    sx={{ display: "flex", alignItems: "center" }}
+    title="Mouse wheel changes radius"
+  >
+    <TextField
+      size="small"
+      type="number"
+      inputProps={{ min: 1, max: MAX_WITHIN_RADIUS, step: 1 }}
+      value={intelRadius}
+      onChange={(e) => {
+        const val = Math.round(Number(e.target.value) || 0);
+        setIntelRadius(Math.min(MAX_WITHIN_RADIUS, Math.max(1, val)));
+      }}
+      sx={{ width: 85 }}
+    />
+  </Box>
+</Box>
 
           <FormControl size="small" sx={fcCompact(90)}>
             <InputLabel>Units</InputLabel>
@@ -997,291 +1091,455 @@ fontSize: "0.70rem",
             </Select>
           </FormControl>
 
-
-<FormControl size="small" sx={{ width: 115 }}>
-  <InputLabel>Show/Hide</InputLabel>
-  <OutlinedInput
-    label="Show/Hide"
-    value="Columns"
-    readOnly
-    onClick={(e) => setColsAnchorEl(e.currentTarget)}
-    endAdornment={
-      <InputAdornment position="end">
-        <ArrowDropDownIcon sx={{ opacity: 0.7 }} />
-      </InputAdornment>
-    }
-    sx={{
-      cursor: "pointer",
-      "& input": { cursor: "pointer", py: 1.0 },
-    }}
-  />
-</FormControl>
-
-<Menu
-  anchorEl={colsAnchorEl}
-  open={colsMenuOpen}
-  onClose={() => setColsAnchorEl(null)}
->
-  <Box sx={{ px: 2, py: 1.5 }}>
-    <FormGroup>
-      {[
-        ["coalition", "Coalition"],
-        ["type", "Type"],
-        ["category", "Category"],
-        ["subcategory", "SubCategory"],
-        ["capability", "Capability"],
-        ["name", "Unit / Group Name"],
-        ["position", "Position"],
-        ["elev", `Elev (${elevUnitLabel})`],
-        ["brgDeg", "Bearing"],
-        ["rng", "Range"],
-        ["speed", `Speed (${speedUnitLabel})`],
-      ].map(([key, label]) => (
-        <FormControlLabel
-          key={key}
-          control={
-            <Checkbox
-              checked={!!colVis[key]}
-              onChange={() => toggleCol(key)}
-              size="small"
+          <FormControl size="small" sx={{ width: 115 }}>
+            <InputLabel>Show/Hide</InputLabel>
+            <OutlinedInput
+              label="Show/Hide"
+              value="Columns"
+              readOnly
+              onClick={(e) => setColsAnchorEl(e.currentTarget)}
+              endAdornment={
+                <InputAdornment position="end">
+                  <ArrowDropDownIcon sx={{ opacity: 0.7 }} />
+                </InputAdornment>
+              }
+              sx={{
+                cursor: "pointer",
+                "& input": { cursor: "pointer", py: 1.0 },
+              }}
             />
-          }
-          label={label}
-        />
-      ))}
-    </FormGroup>
+          </FormControl>
 
-    <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
-      <Button size="small" onClick={() => setColVis(defaultColVis)}>
-        Reset
-      </Button>
-      <Button
-        size="small"
-        onClick={() =>
-          setColVis((prev) => {
-            const next = { ...prev };
-            for (const k of Object.keys(next)) next[k] = false;
-            return next;
-          })
-        }
-      >
-        Hide all
-      </Button>
-      <Button
-        size="small"
-        onClick={() =>
-          setColVis((prev) => {
-            const next = { ...prev };
-            for (const k of Object.keys(next)) next[k] = true;
-            return next;
-          })
-        }
-      >
-        Show all
-      </Button>
-    </Box>
-  </Box>
-</Menu>
+          <Menu anchorEl={colsAnchorEl} open={colsMenuOpen} onClose={() => setColsAnchorEl(null)}>
+            <Box sx={{ px: 2, py: 1.5 }}>
+              <FormGroup>
+                {[
+                  ["coalition", "Coalition"],
+                  ["type", "Type"],
+                  ["category", "Category"],
+                  ["subcategory", "SubCategory"],
+                  ["capability", "Capability"],
+                  ["name", "Unit / Group Name"],
+                  ["position", "Position"],
+                  ["elev", `Elev (${elevUnitLabel})`],
+                  ["brgDeg", "Bearing"],
+                  ["rng", "Range"],
+                  ["speed", `Speed (${speedUnitLabel})`],
+                ].map(([key, label]) => (
+                  <FormControlLabel
+                    key={key}
+                    control={
+                      <Checkbox
+                        checked={!!colVis[key]}
+                        onChange={() => toggleCol(key)}
+                        size="small"
+                        icon={greenBox.icon}
+                        checkedIcon={greenBox.checkedIcon}
+                      />
+                    }
+                    label={label}
+                  />
+                ))}
+              </FormGroup>
+            </Box>
+          </Menu>
 
-<Box sx={{ flexGrow: 1, minWidth: 8 }} />
-
+          <Box sx={{ flexGrow: 1, minWidth: 8 }} />
 
           <Button variant="outlined" size="small" onClick={refresh} disabled={isIntelLoading}>
             {isIntelLoading ? "Request" : "Request"}
           </Button>
 
-          <Button variant="contained" size="small" onClick={handleImportSelected} disabled={selectedCount === 0}>
-            Import
+          <Button
+            variant="contained"
+            size="small"
+            onClick={handleImportSelected}
+            disabled={selectedCount === 0}
+          >
+            Import {selectedCount}
           </Button>
         </Box>
 
-        {/* Table */}
         <TableContainer component={Paper} variant="outlined" sx={{ flex: 1, overflow: "auto", minHeight: 0, maxHeight: "100%" }}>
           <Table stickyHeader size="small" sx={{ tableLayout: "fixed", borderCollapse: "separate" }}>
             <TableHead>
               <TableRow>
-{isColVisible("coalition") && (
-  <TableCell sx={headCellSx("coalition")}>
-    <TableSortLabel
-      active={orderBy === "coalition"}
-      direction={orderBy === "coalition" ? order : "asc"}
-      onClick={() => handleSort("coalition")}
-    >
-      Coalition
-    </TableSortLabel>
-    <ResizeHandle colKey="coalition" />
-  </TableCell>
-)}
+                {isColVisible("coalition") && (
+                  <TableCell sx={headCellSx("coalition")}>
+                    <TableSortLabel
+                      active={orderBy === "coalition"}
+                      direction={orderBy === "coalition" ? order : "asc"}
+                      onClick={() => handleSort("coalition")}
+                      sx={{ width: "100%", justifyContent: "space-between" }}
+                    >
+                      Coalition
+                    </TableSortLabel>
+                    <ResizeHandle colKey="coalition" />
+                  </TableCell>
+                )}
 
-{isColVisible("type") && (
-  <TableCell sx={headCellSx("type")}>
-    <TableSortLabel
-      active={orderBy === "type"}
-      direction={orderBy === "type" ? order : "asc"}
-      onClick={() => handleSort("type")}
-    >
-      Type
-    </TableSortLabel>
-    <ResizeHandle colKey="type" />
-  </TableCell>
-)}
+                {isColVisible("type") && (
+                  <TableCell sx={headCellSx("type")}>
+                    <TableSortLabel
+                      active={orderBy === "type"}
+                      direction={orderBy === "type" ? order : "asc"}
+                      onClick={() => handleSort("type")}
+                      sx={{ width: "100%", justifyContent: "space-between" }}
+                    >
+                      Type
+                    </TableSortLabel>
+                    <ResizeHandle colKey="type" />
+                  </TableCell>
+                )}
 
-{isColVisible("category") && (
-  <TableCell sx={headCellSx("category")}>
-    <TableSortLabel
-      active={orderBy === "category"}
-      direction={orderBy === "category" ? order : "asc"}
-      onClick={() => handleSort("category")}
-    >
-      Category
-    </TableSortLabel>
-    <ResizeHandle colKey="category" />
-  </TableCell>
-)}
+                {isColVisible("category") && (
+                  <TableCell sx={headCellSx("category")}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 0.5,
+                        pr: 1.5,
+                        "&:hover .categorySortArrow .MuiTableSortLabel-icon": {
+                          opacity: orderBy === "category" ? 1 : 0.4,
+                        },
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 0.6,
+                          minWidth: 0,
+                          flex: 1,
+                          cursor: "pointer",
+                        }}
+                        onClick={() => handleSort("category")}
+                        title="Sort by Category"
+                      >
+                        <Box
+                          sx={{
+                            userSelect: "none",
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
+                          Category
+                        </Box>
 
-{isColVisible("subcategory") && (
-  <TableCell sx={headCellSx("subcategory")}>
-    <TableSortLabel
-      active={orderBy === "subcategory"}
-      direction={orderBy === "subcategory" ? order : "asc"}
-      onClick={() => handleSort("subcategory")}
-    >
-      SubCategory
-    </TableSortLabel>
-    <ResizeHandle colKey="subcategory" />
-  </TableCell>
-)}
+                        <Box
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCategoryAnchorEl(e.currentTarget);
+                          }}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          sx={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            width: 18,
+                            height: 18,
+                            cursor: "pointer",
+                            flexShrink: 0,
+                          }}
+                          title="Filter categories"
+                        >
+                          {normalBox.checkedIcon}
+                        </Box>
+                      </Box>
 
-{isColVisible("capability") && (
-  <TableCell sx={headCellSx("capability")}>
-    <TableSortLabel
-      active={orderBy === "capability"}
-      direction={orderBy === "capability" ? order : "asc"}
-      onClick={() => handleSort("capability")}
-    >
-      Capability
-    </TableSortLabel>
-    <ResizeHandle colKey="capability" />
-  </TableCell>
-)}
+                      <Box
+                        className="categorySortArrow"
+                        onClick={() => handleSort("category")}
+                        sx={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "flex-end",
+                          flexShrink: 0,
+                          cursor: "pointer",
+                          ml: 0.5,
+                          mr: -0.15,
+                        }}
+                      >
+                        <TableSortLabel
+                          active={orderBy === "category"}
+                          direction={orderBy === "category" ? order : "asc"}
+                          sx={{
+                            m: 0,
+                            minWidth: 0,
+                            "& .MuiTableSortLabel-icon": {
+                              opacity: 0,
+                              transition: "opacity 120ms ease-in-out",
+                              marginRight: 0,
+                            },
+                            "&.Mui-active .MuiTableSortLabel-icon": {
+                              opacity: 1,
+                            },
+                          }}
+                        >
+                          <span />
+                        </TableSortLabel>
+                      </Box>
+                    </Box>
 
-{isColVisible("name") && (
-  <TableCell sx={headCellSx("name")}>
-    <TableSortLabel
-      active={orderBy === "name"}
-      direction={orderBy === "name" ? order : "asc"}
-      onClick={() => handleSort("name")}
-    >
-      Unit / Group Name
-    </TableSortLabel>
-    <ResizeHandle colKey="name" />
-  </TableCell>
-)}
+                    <Menu
+                      anchorEl={categoryAnchorEl}
+                      open={categoryMenuOpen}
+                      onClose={() => setCategoryAnchorEl(null)}
+                    >
+                      <Box sx={{ px: 2, py: 1.5 }}>
+                        <FormGroup>
+                          <FormControlLabel
+                            control={
+                              <Checkbox
+                                checked={allCategoriesSelected}
+                                indeterminate={someCategoriesSelected}
+                                onChange={toggleAllCategories}
+                                size="small"
+                                icon={greenBox.icon}
+                                checkedIcon={greenBox.checkedIcon}
+                                indeterminateIcon={greenBox.checkedIcon}
+                              />
+                            }
+                            label="All"
+                          />
 
-{isColVisible("position") && (
-  <TableCell sx={headCellSx("position")}>
-    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
-      <span>Position</span>
+                          {availableCategories.map((cat) => (
+                            <FormControlLabel
+                              key={cat}
+                              control={
+                                <Checkbox
+                                  checked={selectedCategories.includes(cat)}
+                                  onChange={() => toggleCategory(cat)}
+                                  size="small"
+                                  icon={greenBox.icon}
+                                  checkedIcon={greenBox.checkedIcon}
+                                />
+                              }
+                              label={cat}
+                            />
+                          ))}
+                        </FormGroup>
+                      </Box>
+                    </Menu>
 
-      <Box
-        onWheel={(e) => {
-          e.preventDefault();
-          const dir = e.deltaY > 0 ? 1 : -1;
-          cycleCoordFmt(dir);
-        }}
-        sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-        title="Mouse wheel changes coordinate format"
-      >
-        <Select
-          size="small"
-          value={coordFmt}
-          onChange={(e) => setCoordFmt(e.target.value)}
-          variant="outlined"
-          sx={{
-            height: 26,
-            fontSize: "0.70rem",
-            "& .MuiSelect-select": { py: 0.3, pr: 2.5 },
-          }}
-        >
-          {coordFmtOptions.map((o) => (
-            <MenuItem key={o.value} value={o.value}>
-              {o.label}
-            </MenuItem>
-          ))}
-        </Select>
-      </Box>
-    </Box>
+                    <ResizeHandle colKey="category" />
+                  </TableCell>
+                )}
 
-    <ResizeHandle colKey="position" />
-  </TableCell>
-)}
+                {isColVisible("subcategory") && (
+                  <TableCell sx={headCellSx("subcategory")}>
+                    <TableSortLabel
+                      active={orderBy === "subcategory"}
+                      direction={orderBy === "subcategory" ? order : "asc"}
+                      onClick={() => handleSort("subcategory")}
+                      sx={{ width: "100%", justifyContent: "space-between" }}
+                    >
+                      SubCategory
+                    </TableSortLabel>
+                    <ResizeHandle colKey="subcategory" />
+                  </TableCell>
+                )}
 
-{isColVisible("elev") && (
-  <TableCell sx={headCellSx("elev")}>
-    <TableSortLabel
-      active={orderBy === "elev"}
-      direction={orderBy === "elev" ? order : "asc"}
-      onClick={() => handleSort("elev")}
-    >
-      Elev ({elevUnitLabel})
-    </TableSortLabel>
-    <ResizeHandle colKey="elev" />
-  </TableCell>
-)}
+                {isColVisible("capability") && (
+                  <TableCell sx={headCellSx("capability")}>
+                    <TableSortLabel
+                      active={orderBy === "capability"}
+                      direction={orderBy === "capability" ? order : "asc"}
+                      onClick={() => handleSort("capability")}
+                      sx={{ width: "100%", justifyContent: "space-between" }}
+                    >
+                      Capability
+                    </TableSortLabel>
+                    <ResizeHandle colKey="capability" />
+                  </TableCell>
+                )}
 
-{isColVisible("brgDeg") && (
-  <TableCell sx={headCellSx("brgDeg")}>
-    <TableSortLabel
-      active={orderBy === "brgDeg"}
-      direction={orderBy === "brgDeg" ? order : "asc"}
-      onClick={() => handleSort("brgDeg")}
-    >
-      Bearing
-    </TableSortLabel>
-    <ResizeHandle colKey="brgDeg" />
-  </TableCell>
-)}
+                {isColVisible("name") && (
+                  <TableCell sx={headCellSx("name")}>
+                    <TableSortLabel
+                      active={orderBy === "name"}
+                      direction={orderBy === "name" ? order : "asc"}
+                      onClick={() => handleSort("name")}
+                      sx={{ width: "100%", justifyContent: "space-between" }}
+                    >
+                      Unit / Group Name
+                    </TableSortLabel>
+                    <ResizeHandle colKey="name" />
+                  </TableCell>
+                )}
 
-{isColVisible("rng") && (
-  <TableCell sx={headCellSx("rng")}>
-    <TableSortLabel
-      active={orderBy === "rng"}
-      direction={orderBy === "rng" ? order : "asc"}
-      onClick={() => handleSort("rng")}
-    >
-      Range
-    </TableSortLabel>
-    <ResizeHandle colKey="rng" />
-  </TableCell>
-)}
+                {isColVisible("position") && (
+                  <TableCell sx={headCellSx("position")}>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, pr: 1.5 }}>
+                      <TableSortLabel
+                        active={orderBy === "position"}
+                        direction={orderBy === "position" ? order : "asc"}
+                        onClick={() => handleSort("position")}
+                        sx={{ flex: 1, minWidth: 0 }}
+                      >
+                        Position
+                      </TableSortLabel>
 
-{isColVisible("speed") && (
-<TableCell sx={headCellSx("speed")}>
-  <TableSortLabel
-    active={orderBy === "speed"}
-    direction={orderBy === "speed" ? order : "asc"}
-    onClick={() => handleSort("speed")}
-  >
-    Speed ({speedUnitLabel})
-  </TableSortLabel>
-  <ResizeHandle colKey="speed" />
-</TableCell>
-)}
-{/* Import (always shown) */}
-<TableCell align="center" sx={headCellSx("import", true)}>
-  <Checkbox
-    checked={allSelected}
-    indeterminate={someSelected}
-    onChange={toggleSelectAll}
-    inputProps={{ "aria-label": "select/deselect all" }}
-    size="small"
-    icon={normalBox.icon}
-    checkedIcon={normalBox.checkedIcon}
-    sx={{ p: 0.25 }}
-  />
-  <ResizeHandle colKey="import" />
-</TableCell>
-</TableRow>
+                      <Box
+                        onClick={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        title="Coordinate format"
+                      >
+                        <Select
+                          size="small"
+                          value={coordFmt}
+                          onChange={(e) => setCoordFmt(e.target.value)}
+                          variant="outlined"
+                          sx={{
+                            height: 26,
+                            fontSize: "0.70rem",
+                            "& .MuiSelect-select": { py: 0.3, pr: 2.5 },
+                          }}
+                        >
+                          {coordFmtOptions.map((o) => (
+                            <MenuItem key={o.value} value={o.value}>
+                              {o.label}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </Box>
+                    </Box>
+
+                    <ResizeHandle colKey="position" />
+                  </TableCell>
+                )}
+
+                {isColVisible("elev") && (
+                  <TableCell sx={headCellSx("elev")}>
+                    <TableSortLabel
+                      active={orderBy === "elev"}
+                      direction={orderBy === "elev" ? order : "asc"}
+                      onClick={() => handleSort("elev")}
+                      sx={{ width: "100%", justifyContent: "space-between" }}
+                    >
+                      Elev ({elevUnitLabel})
+                    </TableSortLabel>
+                    <ResizeHandle colKey="elev" />
+                  </TableCell>
+                )}
+
+                {isColVisible("brgDeg") && (
+                  <TableCell sx={headCellSx("brgDeg")}>
+                    <TableSortLabel
+                      active={orderBy === "brgDeg"}
+                      direction={orderBy === "brgDeg" ? order : "asc"}
+                      onClick={() => handleSort("brgDeg")}
+                      sx={{ width: "100%", justifyContent: "space-between" }}
+                    >
+                      Bearing
+                    </TableSortLabel>
+                    <ResizeHandle colKey="brgDeg" />
+                  </TableCell>
+                )}
+
+                {isColVisible("rng") && (
+                  <TableCell sx={headCellSx("rng")}>
+                    <TableSortLabel
+                      active={orderBy === "rng"}
+                      direction={orderBy === "rng" ? order : "asc"}
+                      onClick={() => handleSort("rng")}
+                      sx={{ width: "100%", justifyContent: "space-between" }}
+                    >
+                      Range
+                    </TableSortLabel>
+                    <ResizeHandle colKey="rng" />
+                  </TableCell>
+                )}
+
+                {isColVisible("speed") && (
+                  <TableCell sx={headCellSx("speed")}>
+                    <TableSortLabel
+                      active={orderBy === "speed"}
+                      direction={orderBy === "speed" ? order : "asc"}
+                      onClick={() => handleSort("speed")}
+                    >
+                      Speed ({speedUnitLabel})
+                    </TableSortLabel>
+                    <ResizeHandle colKey="speed" />
+                  </TableCell>
+                )}
+
+                <TableCell
+                  align="center"
+                  sx={{
+                    ...headCellSx("import", true),
+                    cursor: "pointer",
+                    px: 0.5,
+                    position: "relative",
+                    "&:hover .importSort .MuiTableSortLabel-icon": { opacity: 0.4 },
+                    "&:hover .importSort.Mui-active .MuiTableSortLabel-icon": { opacity: 1 },
+                  }}
+                  onClick={() => handleSort("selected")}
+                  title="Click to sort by selected"
+                >
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      left: "50%",
+                      top: "50%",
+                      transform: "translate(-50%, -50%)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      zIndex: 1,
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
+                  >
+                    <Checkbox
+                      checked={allSelected}
+                      indeterminate={someSelected}
+                      onChange={toggleSelectAll}
+                      inputProps={{ "aria-label": "select/deselect all" }}
+                      size="small"
+                      icon={normalBox.icon}
+                      checkedIcon={normalBox.checkedIcon}
+                      sx={{ p: 0.25 }}
+                    />
+                  </Box>
+
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      right: 0,
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      pointerEvents: "none",
+                    }}
+                  >
+                    <TableSortLabel
+                      className="importSort"
+                      active={orderBy === "selected"}
+                      direction={orderBy === "selected" ? order : "desc"}
+                      sx={{
+                        m: 0,
+                        "& .MuiTableSortLabel-icon": {
+                          opacity: 0,
+                          transition: "opacity 120ms ease-in-out",
+                        },
+                        "&.Mui-active .MuiTableSortLabel-icon": {
+                          opacity: 1,
+                        },
+                      }}
+                    >
+                      <span />
+                    </TableSortLabel>
+                  </Box>
+
+                  <ResizeHandle colKey="import" />
+                </TableCell>
+              </TableRow>
             </TableHead>
 
             <TableBody>
@@ -1290,53 +1548,57 @@ fontSize: "0.70rem",
                 const box = moved ? movedBox : normalBox;
 
                 return (
-                  <TableRow key={row.id} hover>
+                  <TableRow
+                    key={row.id}
+                    hover
+                    onClick={() => toggleRow(row.id)}
+                    sx={{ cursor: "pointer" }}
+                  >
                     {isColVisible("coalition") && <TableCell sx={cellSepSx("coalition")}>{row.coalition}</TableCell>}
-{isColVisible("type") && <TableCell sx={cellSepSx("type")}>{row.type}</TableCell>}
-{isColVisible("category") && <TableCell sx={cellSepSx("category")}>{row.category}</TableCell>}
-{isColVisible("subcategory") && <TableCell sx={cellSepSx("subcategory")}>{row.subcategory}</TableCell>}
-{isColVisible("capability") && <TableCell sx={cellSepSx("capability")}>{row.capability}</TableCell>}
-{isColVisible("name") && <TableCell sx={cellSepSx("name")}>{row.name}</TableCell>}
-{isColVisible("position") && <TableCell sx={cellSepSx("position")}>{row.position}</TableCell>}
+                    {isColVisible("type") && <TableCell sx={cellSepSx("type")}>{row.type}</TableCell>}
+                    {isColVisible("category") && <TableCell sx={cellSepSx("category")}>{row.category}</TableCell>}
+                    {isColVisible("subcategory") && <TableCell sx={cellSepSx("subcategory")}>{row.subcategory}</TableCell>}
+                    {isColVisible("capability") && <TableCell sx={cellSepSx("capability")}>{row.capability}</TableCell>}
+                    {isColVisible("name") && <TableCell sx={cellSepSx("name")}>{row.name}</TableCell>}
+                    {isColVisible("position") && <TableCell sx={cellSepSx("position")}>{row.position}</TableCell>}
+                    {isColVisible("elev") && <TableCell sx={cellSepSx("elev")}>{Math.round(row.displayElev)}</TableCell>}
 
-{isColVisible("elev") && <TableCell sx={cellSepSx("elev")}>{Math.round(row.displayElev)}</TableCell>}
+                    {isColVisible("brgDeg") && (
+                      <TableCell sx={cellSepSx("brgDeg")}>
+                        {Number.isFinite(row.brgDeg) ? row.brgDeg.toFixed(1) : "0.0"}°
+                      </TableCell>
+                    )}
 
-{isColVisible("brgDeg") && (
-  <TableCell sx={cellSepSx("brgDeg")}>
-    {Number.isFinite(row.brgDeg) ? row.brgDeg.toFixed(1) : "0.0"}°
-  </TableCell>
-)}
+                    {isColVisible("rng") && (
+                      <TableCell sx={cellSepSx("rng")}>
+                        {Number.isFinite(row.displayRng)
+                          ? unitsMode === "Metric"
+                            ? row.displayRng.toFixed(2)
+                            : row.displayRng.toFixed(1)
+                          : unitsMode === "Metric"
+                            ? "0.00"
+                            : "0.0"}
+                      </TableCell>
+                    )}
 
-{isColVisible("rng") && (
-  <TableCell sx={cellSepSx("rng")}>
-    {Number.isFinite(row.displayRng)
-      ? unitsMode === "Metric"
-        ? row.displayRng.toFixed(2)
-        : row.displayRng.toFixed(1)
-      : unitsMode === "Metric"
-        ? "0.00"
-        : "0.0"}
-  </TableCell>
-)}
+                    {isColVisible("speed") && (
+                      <TableCell sx={cellSepSx("speed")}>
+                        {Number.isFinite(row.speed) ? row.speed.toFixed(1) : "0.0"}
+                      </TableCell>
+                    )}
 
-{isColVisible("speed") && (
-<TableCell sx={cellSepSx("speed")}>
-  {Number.isFinite(row.speed) ? row.speed.toFixed(1) : "0.0"}
-</TableCell>
-)}
-{/* Import (always shown) */}
-<TableCell align="center" sx={cellSepSx("import", true)}>
-  <Checkbox
-    checked={!!importMap[row.id]}
-    onChange={() => toggleRow(row.id)}
-    size="small"
-    icon={box.icon}
-    checkedIcon={box.checkedIcon}
-    sx={{ p: 0.25 }}
-    title={moved ? "Unit has moved since last snapshot" : "Import"}
-  />
-</TableCell>
-
+                    <TableCell align="center" sx={cellSepSx("import", true)}>
+                      <Checkbox
+                        checked={!!importMap[row.id]}
+                        onChange={() => toggleRow(row.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        size="small"
+                        icon={box.icon}
+                        checkedIcon={box.checkedIcon}
+                        sx={{ p: 0.25 }}
+                        title={moved ? "Unit has moved since last snapshot" : "Import"}
+                      />
+                    </TableCell>
                   </TableRow>
                 );
               })}
@@ -1355,20 +1617,20 @@ fontSize: "0.70rem",
         </TableContainer>
 
         <Typography
-  variant="caption"
-  sx={{ opacity: 0.5, bottom: 80, fontSize: "0.7rem" }}
->
-  Press Request to capture units. Request again to calculate moving units.
-</Typography>
-      
-        {/* Snapshot age (small, bottom-right) */}
+          variant="caption"
+          sx={{ opacity: 0.5, bottom: 80, fontSize: "0.7rem" }}
+        >
+          Press REQUEST to capture units. REQUEST again to calculate moving units.
+          PREVIOUS SNAPSHOT MAY BE SHOWN. Check Snapshot age --&gt;
+        </Typography>
+
         <Typography
           variant="caption"
           sx={{
             position: "absolute",
             right: 28,
             bottom: 5,
-            opacity: 0.5,
+            opacity: 0.7,
             fontSize: "0.75rem",
             pointerEvents: "none",
             userSelect: "none",
@@ -1376,9 +1638,7 @@ fontSize: "0.70rem",
         >
           Snapshot age: {snapshotAgeText}
         </Typography>
-</DialogContent>
-
-      
+      </DialogContent>
     </Dialog>
   );
 }

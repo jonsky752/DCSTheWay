@@ -1,3 +1,4 @@
+//v2
 import a10 from "./a10";
 import ah6j from "./ah6j";
 import ah64 from "./ah64";
@@ -14,6 +15,7 @@ import miragef1 from "./miragef1";
 import oh58d from "./oh58d";
 import sa342 from "./sa342";
 import uh60l from "./uh60l";
+import ns430 from "./ns430";
 
 function applyExtraDelay(commands, buttonExtraDelay) {
   return commands.map((cmd) => ({
@@ -159,6 +161,44 @@ export default function getModuleCommands(module, waypoints, buttonExtraDelay) {
     case "UH-60L_DAP":
       uh60l.extraDelay = 0;
       commands = uh60l.createButtonCommands(waypoints);
+      break;
+
+    case "A-10A":
+    case "AJS37":
+    case "Bf-109K-4":
+    case "C-101CC":
+    case "C-101EB":
+    case "Christen Eagle II":
+    case "F-14B":
+    case "F-15C":
+    case "F-5E-3":
+    case "F-86F Sabre":
+    case "FW-190D9":
+    case "I-16":
+    case "JF-17":
+    case "J-11A":
+    case "L-39C":
+    case "L-39ZA":
+    case "Mi-24P":
+    case "Mi-8MT":
+    case "MiG-15bis":
+    case "MiG-21bis":
+    case "MiG-29 Fulcrum":
+    case "MiG-29A":
+    case "MiG-29G":
+    case "MiG-29S":
+    case "P-51D":
+    case "SpitfireLFMkIX":
+    case "SpitfireLFMkIXCW":
+    case "Su-25":
+    case "Su-25T":
+    case "Su-27":
+    case "Su-33":
+    case "TF-51D":
+    case "UH-1H":
+    case "Yak-52":
+      ns430.extraDelay = 0;
+      commands = [];
       break;
 
     default:

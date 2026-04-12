@@ -19,6 +19,7 @@ class ah6j {
 
   static #delay0   = 10  + this.extraDelay;
   static #delay100 = 100 + this.extraDelay;
+  static #delay200 = 200 + this.extraDelay;
   static #delay500 = 500 + this.extraDelay;
 
 
@@ -27,8 +28,9 @@ class ah6j {
   //====================================================
 
   static #codes = {
-    AUX:   3311,
     WPT:   3306,
+    FPL:   3309,
+    AUX:   3311,
     ENT:   3313,
     INNER: 3314,
     OUTER: 3315,
@@ -106,7 +108,7 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code,
-      delay: this.#delay100,
+      delay: this.#delay200,
       activate: 1,
       addDepress: "false",
     });
@@ -333,7 +335,6 @@ class ah6j {
       activate: 1,
       addDepress: "false",
     });
-
     this.#codesPayload.push({
       device,
       code: this.#codes.WPT,
@@ -366,14 +367,14 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: this.#codes.INNER,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 1,
     });
 
     this.#codesPayload.push({
       device,
       code: this.#codes.OUTER,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 1,
     });
 
@@ -387,7 +388,7 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 1,
       addDepress: "false",
     });
@@ -403,24 +404,30 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: this.#codes.OUTER,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 1,
     });
 
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 1,
       addDepress: "false",
     });
-
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
       delay: 600 + this.extraDelay,
       activate: 0,
       addDepress: "false",
+    });
+
+      this.#codesPayload.push({
+      device,
+      code: 0,
+      delay: 500 + this.extraDelay,
+      activate: 0,
     });
 
     const result = this.#codesPayload.slice();
@@ -454,14 +461,14 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: this.#codes.OUTER,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: -1,
     });
 
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
-      delay: 100 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 1,
       addDepress: "false",
     });
@@ -504,7 +511,7 @@ class ah6j {
 
 
   //====================================================
-  // STATE 3
+  // STATE 1
   // ENTER WAYPOINT NAME
   //====================================================
 
@@ -567,6 +574,13 @@ class ah6j {
     const prevLonMinDigits = this.#minuteDigits(prevLon.min);
     const nextLonMinDigits = this.#minuteDigits(nextLon.min);
 
+      this.#codesPayload.push({
+      device,
+      code: 0,
+      delay: 200 + this.extraDelay,
+      activate: 0,
+    });
+    
     // move from row 1 char 4 to latitude degree digit 1
     this.#pushOuterCW(device, 1);
 
@@ -632,6 +646,13 @@ class ah6j {
     // wrap back to first character of waypoint name
     this.#pushOuterCW(device, 1);
 
+    this.#codesPayload.push({
+      device,
+      code: 0,
+      delay: 200 + this.extraDelay,
+      activate: 0,
+    });
+
   }
 
 
@@ -642,10 +663,143 @@ class ah6j {
 
   static #saveWaypoint(device) {
 
+      this.#codesPayload.push({
+      device,
+      code: 0,
+      delay: 100 + this.extraDelay,
+      activate: 0,
+    });
+
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 1,
+      addDepress: "false",
+    });
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 0,
+      addDepress: "false",
+    });
+
+        this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 1,
+      addDepress: "false",
+    });
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 0,
+      addDepress: "false",
+    });
+
+            this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 1,
+      addDepress: "false",
+    });
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 0,
+      addDepress: "false",
+    });
+
+  }
+
+    //====================================================
+  // FLIGHT PLAN STATE 1
+  // DELETE CURRENT FLIGHT PLAN
+  // FPL -> ENT -> INNER CW -> ENT
+  //====================================================
+
+  static buildDeleteCurrentFlightPlanCommands() {
+
+    const device = this.#device;
+    const oldPayload = this.#codesPayload;
+    this.#codesPayload = [];
+
+      this.#codesPayload.push({
+      device,
+      code: 0,
       delay: 100 + this.extraDelay,
+      activate: 0,
+    });
+    
+    // FPL press
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.FPL,
+      delay: 200 + this.extraDelay,
+      activate: 1,
+      addDepress: "false",
+    });
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.FPL,
+      delay: 600 + this.extraDelay,
+      activate: 0,
+      addDepress: "false",
+    });
+
+        // FPL press
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.FPL,
+      delay: 200 + this.extraDelay,
+      activate: 1,
+      addDepress: "false",
+    });
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.FPL,
+      delay: 600 + this.extraDelay,
+      activate: 0,
+      addDepress: "false",
+    });
+
+
+    // ENT press
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 1,
+      addDepress: "false",
+    });
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 500 + this.extraDelay,
+      activate: 0,
+      addDepress: "false",
+    });
+
+
+    // INNER CW once
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.INNER,
+      delay: 300 + this.extraDelay,
+      activate: 1,
+    });
+
+
+    // ENT press
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
       activate: 1,
       addDepress: "false",
     });
@@ -653,10 +807,469 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
-      delay: 1000 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 0,
       addDepress: "false",
     });
+
+        // ENT press
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 1,
+      addDepress: "false",
+    });
+
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 0,
+      addDepress: "false",
+    });
+
+        // ENT press
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 1,
+      addDepress: "false",
+    });
+
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 0,
+      addDepress: "false",
+    });
+
+        // ENT press
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 1,
+      addDepress: "false",
+    });
+
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 0,
+      addDepress: "false",
+    });
+
+        // ENT press
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 1,
+      addDepress: "false",
+    });
+
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 0,
+      addDepress: "false",
+    });
+
+        // ENT press
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 1,
+      addDepress: "false",
+    });
+
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 0,
+      addDepress: "false",
+    });
+
+        // ENT press
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 1,
+      addDepress: "false",
+    });
+
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 0,
+      addDepress: "false",
+    });    // ENT press
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 1,
+      addDepress: "false",
+    });
+
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 0,
+      addDepress: "false",
+    });
+
+        // ENT press
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 1,
+      addDepress: "false",
+    });
+
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 0,
+      addDepress: "false",
+    });
+
+        // ENT press
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 1,
+      addDepress: "false",
+    });
+
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 0,
+      addDepress: "false",
+    });
+
+        // ENT press
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 1,
+      addDepress: "false",
+    });
+
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 0,
+      addDepress: "false",
+    });
+
+        // ENT press
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 1,
+      addDepress: "false",
+    });
+
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 0,
+      addDepress: "false",
+    });
+
+        // ENT press
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 1,
+      addDepress: "false",
+    });
+
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 0,
+      addDepress: "false",
+    });
+
+        // ENT press
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 1,
+      addDepress: "false",
+    });
+
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 0,
+      addDepress: "false",
+    });
+
+        // ENT press
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 1,
+      addDepress: "false",
+    });
+
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 0,
+      addDepress: "false",
+    });
+
+        // ENT press
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 1,
+      addDepress: "false",
+    });
+
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 0,
+      addDepress: "false",
+    });
+
+        // ENT press
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 1,
+      addDepress: "false",
+    });
+
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 0,
+      addDepress: "false",
+    });
+
+        // ENT press
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 1,
+      addDepress: "false",
+    });
+
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 0,
+      addDepress: "false",
+    });
+
+    const result = this.#codesPayload.slice();
+    this.#codesPayload = oldPayload;
+
+    return result;
+
+  }
+
+
+  //====================================================
+  // FLIGHT PLAN STATE 2
+  // ADD CURRENT WAYPOINT TO FLIGHT PLAN
+  // WPT -> INNER CCW -> ENT -> FPL
+  //====================================================
+
+  static buildAddCurrentWaypointToFlightPlanCommands() {
+
+    const device = this.#device;
+    const oldPayload = this.#codesPayload;
+    this.#codesPayload = [];
+
+      this.#codesPayload.push({
+      device,
+      code: 0,
+      delay: 100 + this.extraDelay,
+      activate: 0,
+    });
+    
+    // WPT press
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.WPT,
+      delay: 200 + this.extraDelay,
+      activate: 1,
+      addDepress: "false",
+    });
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.WPT,
+      delay: 800 + this.extraDelay,
+      activate: 0,
+      addDepress: "false",
+    });
+
+    // INNER CCW once
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.INNER,
+      delay: 300 + this.extraDelay,
+      activate: -1,
+    });
+
+    // ENT press
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 200 + this.extraDelay,
+      activate: 1,
+      addDepress: "false",
+    });
+
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.ENT,
+      delay: 800 + this.extraDelay,
+      activate: 0,
+      addDepress: "false",
+    });
+
+    // FPL press   
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.FPL,
+      delay: 200 + this.extraDelay,
+      activate: 1,
+      addDepress: "false",
+    });
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.FPL,
+      delay: 500 + this.extraDelay,
+      activate: 0,
+      addDepress: "false",
+    });
+
+
+
+    const result = this.#codesPayload.slice();
+    this.#codesPayload = oldPayload;
+
+    return result;
+
+  }
+
+
+  //====================================================
+  // FLIGHT PLAN STATE 3
+  // ACTIVATE FLIGHT PLAN
+  // FPL -> FPL
+  //====================================================
+
+  static buildActivateFlightPlanCommands() {
+
+    const device = this.#device;
+    const oldPayload = this.#codesPayload;
+    this.#codesPayload = [];
+
+      this.#codesPayload.push({
+      device,
+      code: 0,
+      delay: 200 + this.extraDelay,
+      activate: 0,
+    });
+    
+    // FPL press
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.FPL,
+      delay: 200 + this.extraDelay,
+      activate: 1,
+      addDepress: "false",
+    });
+    this.#codesPayload.push({
+      device,
+      code: this.#codes.FPL,
+      delay: 500 + this.extraDelay,
+      activate: 0,
+      addDepress: "false",
+    });
+
+
+    const result = this.#codesPayload.slice();
+    this.#codesPayload = oldPayload;
+
+    return result;
+
+  }
+
+
+  //====================================================
+  // FLIGHT PLAN STATE 4
+  // BUILD NEW FLIGHT PLAN FROM LIST
+  //====================================================
+
+  static buildNewFlightPlanFromListCommands(waypointCount = 0) {
+
+    const oldPayload = this.#codesPayload;
+    this.#codesPayload = [];
+
+    const count = Math.max(0, Number(waypointCount) || 0);
+
+    if (count <= 0) {
+      const result = this.#codesPayload.slice();
+      this.#codesPayload = oldPayload;
+      return result;
+    }
+
+    const deletePayload = this.buildDeleteCurrentFlightPlanCommands();
+    this.#codesPayload.push(...deletePayload);
+
+    for (let i = 0; i < count; i++) {
+      const addPayload = this.buildAddCurrentWaypointToFlightPlanCommands();
+      this.#codesPayload.push(...addPayload);
+    }
+
+    const activatePayload = this.buildActivateFlightPlanCommands();
+    this.#codesPayload.push(...activatePayload);
+
+    const result = this.#codesPayload.slice();
+    this.#codesPayload = oldPayload;
+
+    return result;
 
   }
 

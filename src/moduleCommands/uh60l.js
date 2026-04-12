@@ -99,24 +99,11 @@ class uh60l {
   static createButtonCommands(waypoints) {
     this.#codesPayload = [];
 
-       // Set mode to LAT/LONG - SelectMode value 0.03
-    this.#addKeyboardValue("mode", this.#mode_value);
-
     // Set mode to LAT/LONG - SelectMode value 0.03
     this.#addKeyboardValue("mode", this.#mode_value);
 
-     // Set mode to LAT/LONG - SelectMode value 0.03
-    this.#addKeyboardValue("mode", this.#mode_value);
-    
     // Switch to waypoint page (device this.#device_id, SelectDisplay, value 0.05
     this.#addKeyboardValue("display", this.#display_value);
-
-    // Switch to waypoint page (device this.#device_id, SelectDisplay, value 0.05
-    this.#addKeyboardValue("display", this.#display_value);
-
-    // Switch to waypoint page (device this.#device_id, SelectDisplay, value 0.05
-    this.#addKeyboardValue("display", this.#display_value);
-
 
     for (const waypoint of waypoints) {
       // increment waypoint

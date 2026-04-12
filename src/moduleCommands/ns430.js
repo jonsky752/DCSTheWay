@@ -13,20 +13,16 @@ class ns430 {
   static #device = 257;
   static extraDelay = 0;
 
-  static #buttonPauseMs = 100;
-  static #betweenButtonPauseMs = 200;
+  static #buttondown = 100;
+  static #buttonup = 200;
 
-  static #rotaryPauseMs = 150;
-  static #betweenRotaryPauseMs = 100;
+  static #rotarydown = 150;
+  static #rotaryup = 100;
 
-  static #rotaryPushPauseMs = 200;
-  static #betweenRotaryPushPauseMs = 100;
+  static #rotarypushdown = 200;
+  static #rotarypushup = 200;
 
-  static #cursorPauseMs = 200;
-
-  static #holdClrMs = 2800;
-
-  static #postEntSettleMs = 250;
+  static #holdup = 3000;
 
   // ============================================================
   // NS430 COMMAND CODES
@@ -91,159 +87,200 @@ class ns430 {
   }
 
   // ============================================================
-// LOW LEVEL INPUT HELPERS
-// ============================================================
+  // LOW LEVEL INPUT HELPERS
+  // ============================================================
 
-// Pause
-static #pause(ms) {
-  this.#codesPayload.push({
-    device: 0,
-    code: 0,
-    delay: ms,
-    activate: 0,
-  });
-}
+  static #pause(ms) {
+    this.#codesPayload.push({
+      device: 0,
+      code: 0,
+      delay: ms,
+      activate: 0,
+    });
+  }
 
-// Button timings
-static #button( codeDown, codeUp, pressMs = this.#buttonPauseMs, betweenMs = this.#betweenButtonPauseMs ) {
-  this.#codesPayload.push({
-    device: this.#device,
-    code: codeDown,
-    delay: 0,
-    activate: 1,
-    addDepress: "false",
-  });
-  this.#pause(pressMs);
-  this.#codesPayload.push({
-    device: this.#device,
-    code: codeUp,
-    delay: 0,
-    activate: 0,
-    addDepress: "false",
-  });
-  this.#pause(betweenMs);
-}
+  static #button(
+    codeDown,
+    codeUp,
+    downMs = this.#buttondown,
+    upMs = this.#buttonup,
+  ) {
+    this.#codesPayload.push({
+      device: this.#device,
+      code: codeDown,
+      delay: downMs,
+      activate: 1,
+      addDepress: "false",
+    });
+    this.#codesPayload.push({
+      device: this.#device,
+      code: codeUp,
+      delay: upMs,
+      activate: 0,
+      addDepress: "false",
+    });
+  }
 
-
-// Rotary timings
-static #rotary( code, dir, addDepress = "false", pressMs = this.#rotaryPauseMs, betweenMs = this.#betweenRotaryPauseMs ) {
-  this.#codesPayload.push({
-    device: this.#device,
+  static #rotary(
     code,
-    delay: pressMs,
-    activate: dir,
-    addDepress,
-  });
-  this.#codesPayload.push({
-    device: this.#device,
-    code,
-    delay: betweenMs,
-    activate: 0,
-    addDepress,
-  });
-}
+    dir,
+    addDepress = "false",
+    downMs = this.#rotarydown,
+    upMs = this.#rotaryup,
+  ) {
+    this.#codesPayload.push({
+      device: this.#device,
+      code,
+      delay: downMs,
+      activate: dir,
+      addDepress,
+    });
+    this.#codesPayload.push({
+      device: this.#device,
+      code,
+      delay: upMs,
+      activate: 0,
+      addDepress,
+    });
+  }
 
+  static #rotaryPush(
+    codeDown,
+    codeUp,
+    downMs = this.#rotarypushdown,
+    upMs = this.#rotarypushup,
+  ) {
+    this.#codesPayload.push({
+      device: this.#device,
+      code: codeDown,
+      delay: downMs,
+      activate: 1,
+      addDepress: "false",
+    });
+    this.#codesPayload.push({
+      device: this.#device,
+      code: codeUp,
+      delay: upMs,
+      activate: 0,
+      addDepress: "false",
+    });
+  }
 
-// Rotary push timings
-static #rotaryPush( codeDown, codeUp, pushsMs = this.#rotaryPushPauseMs, betweenMs = this.#betweenRotaryPushPauseMs ) {
-  this.#codesPayload.push({
-    device: this.#device,
-    code: codeDown,
-    delay: pushsMs,
-    activate: 1,
-    addDepress: "false",
-  });
-  this.#codesPayload.push({
-    device: this.#device,
-    code: codeUp,
-    delay: betweenMs,
-    activate: 0,
-    addDepress: "false",
-  });
-  this.#pause(betweenMs);
-}
+  static #holdButton(
+    codeDown,
+    codeUp,
+    holdMs = this.#holdup,
+    upMs = this.#buttonup,
+  ) {
+    this.#codesPayload.push({
+      device: this.#device,
+      code: codeDown,
+      delay: holdMs,
+      activate: 1,
+      addDepress: "false",
+    });
+    this.#codesPayload.push({
+      device: this.#device,
+      code: codeUp,
+      delay: upMs,
+      activate: 0,
+      addDepress: "false",
+    });
+  }
 
-// Held button
-static #holdButton(codeDown, codeUp, holdMs, betweenMs = this.#betweenButtonPauseMs ) {
-  this.#codesPayload.push({
-    device: this.#device,
-    code: codeDown,
-    delay: 0,
-    activate: 1,
-    addDepress: "false",
-  });
-  this.#pause(holdMs);
-  this.#codesPayload.push({
-    device: this.#device,
-    code: codeUp,
-    delay: 0,
-    activate: 0,
-    addDepress: "false",
-  });
-  this.#pause(betweenMs);
-}
   // ============================================================
   // NAMED BUTTON / ROTARY HELPERS
   // ============================================================
 
   static #CLR() {
-  this.#button(this.#codes.CLRD, this.#codes.CLRU);
-}
+    this.#button(this.#codes.CLRD, this.#codes.CLRU);
+  }
 
-static #DIR() {
-  this.#button(this.#codes.DIRD, this.#codes.DIRU);
-}
+  static #DIR() {
+    this.#button(this.#codes.DIRD, this.#codes.DIRU);
+  }
 
-static #ENT(releaseMs = this.#betweenButtonPauseMs) {
-  this.#button(this.#codes.ENTD, this.#codes.ENTU, this.#buttonPauseMs, releaseMs);
-}
+  static #ENT(releaseMs = this.#buttonup) {
+    this.#button(
+      this.#codes.ENTD,
+      this.#codes.ENTU,
+      this.#buttondown,
+      releaseMs,
+    );
+  }
 
-static #FPL() {
-  this.#button(this.#codes.FPLD, this.#codes.FPLU);
-}
+  static #FPL() {
+    this.#button(this.#codes.FPLD, this.#codes.FPLU);
+  }
 
-static #MENU() {
-  this.#button(this.#codes.MENUD, this.#codes.MENUU);
-}
+  static #MENU() {
+    this.#button(this.#codes.MENUD, this.#codes.MENUU);
+  }
 
-static #MSG() {
-  this.#button(this.#codes.MSGD, this.#codes.MSGU);
-}
+  static #MSG() {
+    this.#button(this.#codes.MSGD, this.#codes.MSGU);
+  }
 
-static #BIGr(addDepress = "false") {
-  this.#rotary(this.#codes.RIGHT_BIG, 1, addDepress, this.#cursorPauseMs, this.#betweenRotaryPauseMs);
-}
+  static #BIGr(addDepress = "false") {
+    this.#rotary(
+      this.#codes.RIGHT_BIG,
+      1,
+      addDepress,
+      this.#rotarydown,
+      this.#rotaryup,
+    );
+  }
 
-static #BIGl(addDepress = "false") {
-  this.#rotary(this.#codes.RIGHT_BIG, -1, addDepress, this.#cursorPauseMs, this.#betweenRotaryPauseMs);
-}
+  static #BIGl(addDepress = "false") {
+    this.#rotary(
+      this.#codes.RIGHT_BIG,
+      -1,
+      addDepress,
+      this.#rotarydown,
+      this.#rotaryup,
+    );
+  }
 
-static #SMALLr(addDepress = "false") {
-  this.#rotary(this.#codes.RIGHT_SMALL, 1, addDepress);
-}
+  static #SMALLr(addDepress = "false") {
+    this.#rotary(
+      this.#codes.RIGHT_SMALL,
+      1,
+      addDepress,
+      this.#rotarydown,
+      this.#rotaryup,
+    );
+  }
 
-static #SMALLl(addDepress = "false") {
-  this.#rotary(this.#codes.RIGHT_SMALL, -1, addDepress);
-}
+  static #SMALLl(addDepress = "false") {
+    this.#rotary(
+      this.#codes.RIGHT_SMALL,
+      -1,
+      addDepress,
+      this.#rotarydown,
+      this.#rotaryup,
+    );
+  }
 
-static #SMALLp() {
-  this.#rotaryPush(
-    this.#codes.RIGHT_SMALL_PUSHD,
-    this.#codes.RIGHT_SMALL_PUSHU
-  );
-}
+  static #SMALLp() {
+    this.#rotaryPush(
+      this.#codes.RIGHT_SMALL_PUSHD,
+      this.#codes.RIGHT_SMALL_PUSHU,
+      this.#rotarypushdown,
+      this.#rotarypushup,
+    );
+  }
 
-static #holdCLR() {
-  this.#holdButton(
-    this.#codes.CLRD,
-    this.#codes.CLRU,
-    this.#holdClrMs
-  );
-}
+  static #holdCLR() {
+    this.#holdButton(
+      this.#codes.CLRD,
+      this.#codes.CLRU,
+      this.#holdup,
+      this.#buttonup,
+    );
+  }
 
   // ============================================================
   // AUTOMATIC / CALCULATION HELPERS
-  // Keep the builders below focused on readable press sequences.
   // ============================================================
 
   static #indexInCharset(charset, ch) {
@@ -263,7 +300,7 @@ static #holdCLR() {
   static #sanitizeName(name) {
     return String(name || "")
       .toUpperCase()
-      .replace(/[^A-Z0-9+]/g, " ")
+      .replace(/[^A-Z0-9]/g, " ")
       .padEnd(5, " ")
       .slice(0, 5);
   }
@@ -271,7 +308,9 @@ static #holdCLR() {
   static #formatDecimalDegreesToEditableChars(value, isLat) {
     const numericValue = Number(value);
     if (!Number.isFinite(numericValue)) {
-      throw new Error(`Invalid ${isLat ? "latitude" : "longitude"} snapshot value: ${value}`);
+      throw new Error(
+        `Invalid ${isLat ? "latitude" : "longitude"} snapshot value: ${value}`,
+      );
     }
 
     const hemi = numericValue >= 0
@@ -297,7 +336,8 @@ static #holdCLR() {
     const degreeDigits = String(degrees).padStart(degreeWidth, "0");
     const minuteWhole = Math.floor(minutesHundredths / 100);
     const minuteDecimal = minutesHundredths % 100;
-    const minuteDigits = `${String(minuteWhole).padStart(2, "0")}${String(minuteDecimal).padStart(2, "0")}`;
+    const minuteDigits =
+      `${String(minuteWhole).padStart(2, "0")}${String(minuteDecimal).padStart(2, "0")}`;
 
     return [hemi, ...degreeDigits.split(""), ...minuteDigits.split("")];
   }
@@ -314,8 +354,16 @@ static #holdCLR() {
     const latHem = waypoint?.latHemi || waypoint?.latHem || "N";
     const longHem = waypoint?.longHemi || waypoint?.longHem || "E";
 
-    const latChars = this.#formatWaypointFieldToEditableChars(waypoint?.lat, latHem, true);
-    const longChars = this.#formatWaypointFieldToEditableChars(waypoint?.long, longHem, false);
+    const latChars = this.#formatWaypointFieldToEditableChars(
+      waypoint?.lat,
+      latHem,
+      true,
+    );
+    const longChars = this.#formatWaypointFieldToEditableChars(
+      waypoint?.long,
+      longHem,
+      false,
+    );
 
     return [...latChars, ...longChars];
   }
@@ -349,7 +397,11 @@ static #holdCLR() {
 
   static #applyNameCharacter(current, target, index) {
     const previousChar = current[index];
-    current[index] = this.#setCharacter(previousChar, target[index], this.#nameCharset);
+    current[index] = this.#setCharacter(
+      previousChar,
+      target[index],
+      this.#nameCharset,
+    );
 
     if (previousChar !== target[index]) {
       for (let j = index + 1; j < current.length; j += 1) {
@@ -373,6 +425,23 @@ static #holdCLR() {
     this.#lastEnteredName = target.join("");
   }
 
+  static #enterFlightPlanWaypointName(name) {
+    const target = this.#sanitizeName(name).split("");
+    const current = ["K", " ", " ", " ", " "];
+
+    for (let i = 0; i < current.length; i += 1) {
+      current[i] = this.#setCharacter(
+        current[i],
+        target[i],
+        this.#nameCharset,
+      );
+
+      if (i < current.length - 1) {
+        this.#BIGr();
+      }
+    }
+  }
+
   static #enterCoordinatesAutomatically(current, target) {
     current[0] = this.#setCharacter(current[0], target[0], this.#coordCharsets[0]);
 
@@ -389,59 +458,71 @@ static #holdCLR() {
     }
   }
 
-  // ============================================================
-// SETUP COMMANDS
-// ============================================================
+  // =================================================================================================================================================================
+  // INITIAL SETUP COMMANDS
+  // =================================================================================================================================================================
 
-static buildSetupCommands(deletePasses = 10) {
-  this.resetPayload();
-  this.#lastEnteredName = "     ";
+  static buildSetupCommands(deletePasses = 10) {
+    this.resetPayload();
+    this.#lastEnteredName = "     ";
 
-  this.#pause(100);
-
-  // Sequence: establish a reliable starting point.
-  this.#holdCLR();
-  this.#BIGr();
-
-  for (let i = 0; i < 9; i += 1) {
+    this.#CLR();
     this.#SMALLr();
-  }
+    this.#SMALLl();
+    this.#BIGr();
+    this.#BIGl();
+    this.#pause(100);
 
-  // Automatic: delete all user waypoints.
-  for (let i = 0; i < deletePasses; i += 1) {
+    // DELETE CURRENT FLIGHT PLAN
+    this.#FPL();
     this.#MENU();
-    this.#SMALLr("true");
+    this.#SMALLr();
+    this.#SMALLr();
+    this.#SMALLr();
     this.#ENT();
     this.#ENT();
+    this.#SMALLp();
+    this.#pause(300);
+
+    //DELETE CURRENT USER WAYPOINTS X10 
+    this.#holdCLR();
+    this.#BIGr();
+
+    for (let i = 0; i < 10; i += 1) {
+      this.#SMALLr();
+    }
+
+    for (let i = 0; i < deletePasses; i += 1) {
+      this.#MENU();
+      this.#SMALLr("true");
+      this.#ENT();
+      this.#ENT();
+    }
+
+    this.#holdCLR();
+    this.#CLR();
+    this.#pause(200);
+    this.#BIGl();
+    this.#BIGr();
+    //this.#BIGr();
+   
+
+    this.#CLR();
+
+    return this.getPayload();
   }
 
-  // Sequence: exit the delete loop cleanly.
-  this.#SMALLp();
-  this.#pause(300);
-  this.#SMALLl();
-  this.#pause(300);
-  this.#SMALLr();
-  this.#SMALLr();
-  this.#SMALLr();
-  this.#pause(300);
-  this.#CLR();
-  this.#CLR();
-  this.#CLR();
-  this.#CLR();
+  static buildFinalSetupPushCommands() {
+    this.resetPayload();
 
-  return this.getPayload();
-}
+    this.#CLR();
+    this.#pause(100);
+    this.#SMALLp();
+    this.#pause(200);
 
-// Inner Push in it's own payload
-static buildFinalSetupPushCommands() {
-  this.resetPayload();
+    return this.getPayload();
+  }
 
-  this.#pause(100);
-  this.#SMALLp();
-  this.#pause(200);
-
-  return this.getPayload();
-}
   // ============================================================
   // NAME ENTRY COMMANDS
   // ============================================================
@@ -450,13 +531,9 @@ static buildFinalSetupPushCommands() {
     this.resetPayload();
 
     this.#pause(100);
-
-    // Sequence: move to first editable name character.
     this.#SMALLr();
-
     this.#pause(200);
 
-    // Automatic: enter the name from current cached state.
     this.#enterNameAutomatically(name);
 
     this.#pause(500);
@@ -467,8 +544,7 @@ static buildFinalSetupPushCommands() {
   static buildConfirmNameCommands() {
     this.resetPayload();
 
-    // Sequence: confirm name entry.
-    this.#ENT(this.#postEntSettleMs);
+    this.#ENT();
 
     return this.getPayload();
   }
@@ -489,20 +565,16 @@ static buildFinalSetupPushCommands() {
 
     this.#pause(100);
 
-    // Sequence: step through prompts to the position page.
-    for (let i = 0; i < 5; i += 1) {
+    for (let i = 0; i < 6; i += 1) {
       this.#ENT();
     }
-    this.#ENT(this.#postEntSettleMs);
 
     this.#pause(100);
 
-    // Sequence: return the cursor to the first editable position character.
     this.#SMALLr();
     for (let i = 0; i < 7; i += 1) {
       this.#BIGl();
     }
-    //this.#SMALLr();
 
     this.#pause(200);
 
@@ -519,34 +591,17 @@ static buildFinalSetupPushCommands() {
     const current = this.#snapshotToCurrentChars(currentPosition);
     const target = this.#waypointToTargetChars(waypoint);
 
-    // DEBUG: show coordinate conversion.
-    const rawLat = currentPosition?.lat;
-    const rawLon = currentPosition?.long ?? currentPosition?.lon;
-
-    const roundedLat = current.slice(0, 7).join("");
-    const roundedLon = current.slice(7).join("");
-
-    const targetLat = target.slice(0, 7).join("");
-    const targetLon = target.slice(7).join("");
-
-    console.log("NS430 POSITION DEBUG");
-    console.log("Raw aircraft position:", rawLat, rawLon);
-    console.log("Rounded editable:", roundedLat, roundedLon);
-    console.log("Target waypoint:", targetLat, targetLon);
-    console.log("Waypoint source:", waypoint);
-    console.log("------------------------------------------------");
-
-    // Automatic: edit every coordinate character from current to target.
     this.#enterCoordinatesAutomatically(current, target);
 
-    this.#pause(200);
-
-    // Sequence: confirm coordinate entry.
+    this.#pause(500);
+    this.#BIGr();
+    this.#BIGr();
+    this.#BIGr();
+    this.#BIGr();
     this.#ENT();
-    this.#pause(400);
+    this.#pause(500);
     this.#ENT();
-    this.#pause(400);
-    this.#ENT();
+    this.#pause(500);
 
     return this.getPayload();
   }
@@ -558,15 +613,136 @@ static buildFinalSetupPushCommands() {
   static buildSaveWaypointCommands() {
     this.resetPayload();
 
-    this.#pause(200);
+    this.#pause(800);
 
-    // Sequence: save and return.
     this.#SMALLp();
     this.#MSG();
     this.#MSG();
 
     return this.getPayload();
   }
+
+  // ============================================================
+  // FLIGHT PLAN COMMANDS
+  // ============================================================
+
+  static buildFlightPlanCreateStartCommands() {
+    this.resetPayload();
+
+
+    this.#FPL();
+
+    this.#SMALLp();
+
+    this.#pause(300);
+
+    return this.getPayload();
+  }
+
+  static buildFlightPlanAddWaypointFromListCommands(waypointNumber) {
+  this.resetPayload();
+
+  const listSteps = Math.max(0, (Number(waypointNumber) || 0) - 1);
+  const bigRightSteps = Math.max(0, (Number(waypointNumber) || 0) - 6);
+
+  this.#pause(150);
+  this.#SMALLr();
+
+   // Move first character from K to W (correct number of steps)
+  this.#setCharacter("K", "W", this.#nameCharset);
+  this.#pause(200);
+
+  this.#BIGr();
+
+  // Move first character from K to W (correct number of steps)
+  this.#setCharacter(" ", "A", this.#nameCharset);
+  this.#pause(200);
+
+  // Open the user waypoint list
+  this.#ENT();
+  this.#pause(300);
+
+  // Move down to the correct waypoint in the list
+  for (let i = 0; i < listSteps; i += 1) {
+    this.#SMALLr();
+  }
+
+  this.#pause(300);
+
+  // Select highlighted waypoint
+  this.#ENT();
+  this.#pause(300);
+
+  // Accept it
+  this.#ENT();
+  this.#pause(300);
+
+  // Move across to the next visible flight plan slot if needed
+  for (let i = 0; i < bigRightSteps; i += 1) {
+    this.#BIGr();
+  }
+
+  this.#BIGr();
+  this.#BIGr();
+  this.#BIGr();
+  this.#BIGr();
+
+  return this.getPayload();
+}
+
+  static buildFlightPlanAddWaypointCommands(name, waypointNumber) {
+  this.resetPayload();
+
+  const bigRightSteps = Math.max(0, (Number(waypointNumber) || 0) - 6);
+
+  this.#pause(150);
+
+  this.#SMALLr();
+  this.#pause(200);
+
+  this.#enterFlightPlanWaypointName(name);
+
+  this.#pause(300);
+  this.#ENT();
+  this.#pause(300);
+  this.#ENT();
+  this.#pause(300);
+  this.#ENT();
+  this.#pause(300);
+
+  for (let i = 0; i < bigRightSteps; i += 1) {
+    this.#BIGr();
+  }
+
+  this.#BIGr();
+  this.#BIGr();
+  this.#BIGr();
+  this.#BIGr();
+
+  return this.getPayload();
+}
+
+  static buildFlightPlanActivateCommands(waypointCount) {
+  this.resetPayload();
+
+  const stepsLeft = Math.max(0, Number(waypointCount) || 0) + 5;
+
+  this.#pause(200);
+
+  for (let i = 0; i < stepsLeft; i += 1) {
+    this.#BIGl();
+  }
+
+  this.#pause(200);
+
+  this.#MENU();
+  this.#ENT();
+  this.#ENT();
+  this.#MSG();
+  this.#MSG();
+
+  return this.getPayload();
+}
 }
 
 export default ns430;

@@ -1,38 +1,36 @@
+//v3
 import { Fab, Grid, Tooltip, Typography } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import { useSelector } from "react-redux";
 
 const TransferControls = (props) => {
-
   const waypointList = useSelector((state) => state.waypoints.dcsWaypoints);
   const { module, busy } = useSelector((state) => state.dcsPoint);
-
-  // NEW: keeps Abort active during staged transfers
-  const effectiveBusy = busy || props.busyOverride;
-
+  const effectiveBusy = props.busyOverride ?? busy;
   const allowSaveFile = waypointList.length > 0;
   const allowTransfer = allowSaveFile && module && module !== "Spectator";
 
-  function button() {
+    function button() {
+    // Use our override instead of raw Redux busy
+    const isRunning = props.transferRunning ?? effectiveBusy;
+    const isAborting = props.transferAborting === true;
 
-    if (effectiveBusy) {
-
+    if (isRunning) {
       return (
         <Fab
           variant="extended"
-          color="warning"
-          onClick={props.onAbort}
+          color={isAborting ? "error" : "warning"}
+          onClick={isAborting ? undefined : props.onAbort}
+          disabled={isAborting}
         >
           <Typography variant="button" pr={2}>
-            <b>Abort transfer</b>
+            <b>{isAborting ? "Aborting..." : "Abort transfer"}</b>
           </Typography>
           <SendIcon />
         </Fab>
       );
-
     } else {
-
       return (
         <Fab
           variant="extended"
@@ -46,7 +44,6 @@ const TransferControls = (props) => {
           <SendIcon />
         </Fab>
       );
-
     }
   }
 
@@ -58,7 +55,6 @@ const TransferControls = (props) => {
         alignItems="center"
         style={{ height: "100%" }}
       >
-
         <Grid item>
           <Tooltip title="Save waypoints to file">
             <Fab
@@ -73,14 +69,11 @@ const TransferControls = (props) => {
             </Fab>
           </Tooltip>
         </Grid>
-
         <Grid item>
-          {button()}
+          { button() }
         </Grid>
-
       </Grid>
     </>
   );
 };
-
 export default TransferControls;

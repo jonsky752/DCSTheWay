@@ -20,6 +20,10 @@ function isReplaceModule(module) {
   return /(?:_|-)REPLACE$/i.test(module || "");
 }
 
+function isNewFlightPlanModule(module) {
+  return /(?:_|-)NEWFPLN$/i.test(module || "");
+}
+
 function row1IsWP0(row1) {
   return /\bWP0\b/i.test(String(row1 || "").trim());
 }
@@ -122,7 +126,9 @@ export default async function ah6jTransfer({
     await sleep(estimateRuntime(initial));
     throwIfAborted();
 
-    if (isReplaceModule(module)) {
+    const newFlightPlanMode = isNewFlightPlanModule(module);
+
+    if (isReplaceModule(module) || newFlightPlanMode) {
       await prepareReplaceMode({ buttonExtraDelay, ipcRenderer });
       throwIfAborted();
     }
@@ -143,12 +149,6 @@ export default async function ah6jTransfer({
         row2: await readRow2(ipcRenderer),
       };
 
-      console.log("[AH6J] DISPLAY ROW2:", display.row2);
-      console.log("[AH6J] TARGET WP:", moduleWaypoints[i]);
-
-      // allow TNL3100 page to settle before sending first command
-      await sleep(300 + buttonExtraDelay);
-
 
       // allow TNL3100 page to settle before sending first command
       await sleep(300 + buttonExtraDelay);
@@ -164,6 +164,19 @@ export default async function ah6jTransfer({
 
       await sendCommands(ipcRenderer, commands);
       await sleep(estimateRuntime(commands));
+      throwIfAborted();
+    }
+
+    if (newFlightPlanMode) {
+      throwIfAborted();
+
+      const buildFlightPlan = applyExtraDelay(
+        ah6j.buildNewFlightPlanFromListCommands(moduleWaypoints.length),
+        buttonExtraDelay,
+      );
+
+      await sendCommands(ipcRenderer, buildFlightPlan);
+      await sleep(estimateRuntime(buildFlightPlan, 1500));
       throwIfAborted();
     }
   } catch (err) {
