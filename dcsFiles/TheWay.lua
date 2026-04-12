@@ -1,4 +1,4 @@
-log.write("THEWAY", log.INFO, "Initializing V2.6.0")
+log.write("THEWAY", log.INFO, "Initializing V3.0.0")
 
 local tcpServer                        = nil
 local udpSpeaker                       = nil
@@ -505,12 +505,14 @@ function checkSocket()
             -- Generic request / response API
             if decodedData["cmd"] == "GET_PARAM_HANDLES" or
                decodedData["cmd"] == "GET_COCKPIT_DISPLAYS" or
-               decodedData["cmd"] == "GET_EXPORT_DATA" then
+               decodedData["cmd"] == "GET_EXPORT_DATA" or
+               decodedData["cmd"] == "GET_OWN_POSITION" then
 
                 local response = {
                     ok = true,
                     HandleData = {},
                     CockpitDisplayData = {},
+                    OwnPosition = {},
                     ErrorList = {}
                 }
 
@@ -524,6 +526,25 @@ function checkSocket()
                     handle_names = decodedData["handles"] or decodedData["GetHandleData"]
                 elseif decodedData["cmd"] == "GET_COCKPIT_DISPLAYS" then
                     display_ids = decodedData["displays"] or decodedData["GetCockpitDisplayData"]
+                elseif decodedData["cmd"] == "GET_OWN_POSITION" then
+                    local ok_pos, err_pos = pcall(function()
+                        local selfData = LoGetSelfData and LoGetSelfData() or nil
+                        if selfData and selfData.LatLongAlt then
+                            response["OwnPosition"]["lat"] = tostring(selfData.LatLongAlt.Lat)
+                            response["OwnPosition"]["long"] = tostring(selfData.LatLongAlt.Long)
+                            response["OwnPosition"]["alt"] = tostring(selfData.LatLongAlt.Alt or 0)
+                            response["OwnPosition"]["model"] = tostring(selfData.Name or "Unknown")
+                        else
+                            response["ok"] = false
+                            table.insert(response["ErrorList"], "LoGetSelfData().LatLongAlt unavailable")
+                        end
+                    end)
+
+                    if not ok_pos then
+                        response["ok"] = false
+                        table.insert(response["ErrorList"], tostring(err_pos))
+                        log.write("THEWAY", log.ERROR, "Failure to get own position: " .. tostring(err_pos))
+                    end
                 end
 
                 if handle_names then

@@ -12,7 +12,7 @@ function sendTcpMessage(msg, expectResponse = false) {
       finished = true;
       try {
         client.destroy();
-      } catch (e) {}
+      } catch {}
       fn(value);
     };
 
@@ -36,7 +36,6 @@ function sendTcpMessage(msg, expectResponse = false) {
         }
 
         const trimmed = responseBuffer.trim();
-
         if (!trimmed) {
           finish(resolve, null);
           return;
@@ -44,7 +43,7 @@ function sendTcpMessage(msg, expectResponse = false) {
 
         try {
           finish(resolve, JSON.parse(trimmed));
-        } catch (e) {
+        } catch {
           finish(resolve, { raw: trimmed });
         }
       })
@@ -59,13 +58,13 @@ function sendTcpMessage(msg, expectResponse = false) {
 
 class TCPSender {
   constructor() {
-    ipcMain.on("messageToDcs", (event, msg) => {
+    ipcMain.on("messageToDcs", (_event, msg) => {
       sendTcpMessage(msg, false).catch((e) => {
         console.log(e);
       });
     });
 
-    ipcMain.handle("messageToDcsRequest", async (event, msg) => {
+    ipcMain.handle("messageToDcsRequest", async (_event, msg) => {
       return await sendTcpMessage(msg, true);
     });
   }
