@@ -22,11 +22,8 @@ class userPreferenceHandler {
     });
   }
 
-  #writeModulePreferencesFile(data) {
-    const existingPreference = this.store.get(data.module);
-    existingPreference
-      ? this.store.set(data.module, [...existingPreference, data.option])
-      : this.store.set(data.module, [data.option]);
+    #writeModulePreferencesFile(data) {
+    this.store.set(data.module, [data.option]);
   }
 
     #writeSettingsPreferencesFile(data) {

@@ -285,13 +285,23 @@ async function createWindow() {
     } catch {}
   }
 
-  if (isDev) {
-    const options = { loadExtensionOptions: { allowFileAccess: true } };
+  mainWindow.loadURL(buildAppUrl(null));
+
+if (isDev) {
+  const options = { loadExtensionOptions: { allowFileAccess: true } };
+
+  try {
     await installExtension(REDUX_DEVTOOLS, options);
-    mainWindow.webContents.openDevTools({ mode: "detach" });
+  } catch (err) {
+    console.log("Redux DevTools install failed:", err.message);
   }
 
-  mainWindow.loadURL(buildAppUrl(null));
+  try {
+    mainWindow.webContents.openDevTools({ mode: "detach" });
+  } catch (err) {
+    console.log("Opening DevTools failed:", err.message);
+  }
+}
 
   try {
     mainWindow.setSkipTaskbar(true);
