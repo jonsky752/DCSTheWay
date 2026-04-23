@@ -366,7 +366,7 @@ class ah6j {
 
     this.#codesPayload.push({
       device,
-      code: this.#codes.INNER,
+      code: 0,
       delay: 200 + this.extraDelay,
       activate: 1,
     });
@@ -418,7 +418,7 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
-      delay: 600 + this.extraDelay,
+      delay: 200 + this.extraDelay,
       activate: 0,
       addDepress: "false",
     });
@@ -649,7 +649,7 @@ class ah6j {
     this.#codesPayload.push({
       device,
       code: 0,
-      delay: 200 + this.extraDelay,
+      delay: 400 + this.extraDelay,
       activate: 0,
     });
 
@@ -685,34 +685,11 @@ class ah6j {
       addDepress: "false",
     });
 
-        this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 1,
-      addDepress: "false",
-    });
     this.#codesPayload.push({
       device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
+      code: 0,
+      delay: 800 + this.extraDelay,
       activate: 0,
-      addDepress: "false",
-    });
-
-            this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 1,
-      addDepress: "false",
-    });
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 0,
-      addDepress: "false",
     });
 
   }
@@ -803,7 +780,6 @@ class ah6j {
       activate: 1,
       addDepress: "false",
     });
-
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
@@ -820,277 +796,6 @@ class ah6j {
       activate: 1,
       addDepress: "false",
     });
-
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 0,
-      addDepress: "false",
-    });
-
-        // ENT press
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 1,
-      addDepress: "false",
-    });
-
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 0,
-      addDepress: "false",
-    });
-
-        // ENT press
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 1,
-      addDepress: "false",
-    });
-
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 0,
-      addDepress: "false",
-    });
-
-        // ENT press
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 1,
-      addDepress: "false",
-    });
-
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 0,
-      addDepress: "false",
-    });
-
-        // ENT press
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 1,
-      addDepress: "false",
-    });
-
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 0,
-      addDepress: "false",
-    });
-
-        // ENT press
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 1,
-      addDepress: "false",
-    });
-
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 0,
-      addDepress: "false",
-    });    // ENT press
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 1,
-      addDepress: "false",
-    });
-
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 0,
-      addDepress: "false",
-    });
-
-        // ENT press
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 1,
-      addDepress: "false",
-    });
-
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 0,
-      addDepress: "false",
-    });
-
-        // ENT press
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 1,
-      addDepress: "false",
-    });
-
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 0,
-      addDepress: "false",
-    });
-
-        // ENT press
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 1,
-      addDepress: "false",
-    });
-
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 0,
-      addDepress: "false",
-    });
-
-        // ENT press
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 1,
-      addDepress: "false",
-    });
-
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 0,
-      addDepress: "false",
-    });
-
-        // ENT press
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 1,
-      addDepress: "false",
-    });
-
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 0,
-      addDepress: "false",
-    });
-
-        // ENT press
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 1,
-      addDepress: "false",
-    });
-
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 0,
-      addDepress: "false",
-    });
-
-        // ENT press
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 1,
-      addDepress: "false",
-    });
-
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 0,
-      addDepress: "false",
-    });
-
-        // ENT press
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 1,
-      addDepress: "false",
-    });
-
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 0,
-      addDepress: "false",
-    });
-
-        // ENT press
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 1,
-      addDepress: "false",
-    });
-
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 0,
-      addDepress: "false",
-    });
-
-        // ENT press
-    this.#codesPayload.push({
-      device,
-      code: this.#codes.ENT,
-      delay: 200 + this.extraDelay,
-      activate: 1,
-      addDepress: "false",
-    });
-
     this.#codesPayload.push({
       device,
       code: this.#codes.ENT,
@@ -1140,6 +845,13 @@ class ah6j {
       delay: 800 + this.extraDelay,
       activate: 0,
       addDepress: "false",
+    });
+
+    this.#codesPayload.push({
+      device,
+      code: 0,
+      delay: 500 + this.extraDelay,
+      activate: 0,
     });
 
     // INNER CCW once

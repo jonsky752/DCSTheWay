@@ -5,6 +5,7 @@ import { uiActions } from "../store/ui";
 import { useDispatch, useSelector } from "react-redux";
 import { throttle } from "lodash";
 
+
 const { ipcRenderer } = window.require("electron");
 
 const useElectronIpcListeners = () => {
@@ -100,30 +101,50 @@ const useElectronIpcListeners = () => {
     };
   }, [lat, long, elev, module, dcsWaypointsCount, dispatch]);
 
-  useEffect(() => {
-    ipcRenderer.send("getPreferences");
+useEffect(() => {
+  ipcRenderer.send("getPreferences");
 
-    const onDataReceived = throttle((_event, msg) => {
-      const data = JSON.parse(msg);
+  let lastBusy = null;
+  let lastBusyTs = null;
 
-      dispatch(dcsPointActions.changeCoords(data));
+  const onDataReceived = throttle((_event, msg) => {
+  const data = JSON.parse(msg);
 
-      if (data?.HandleData) {
-        window.tnl3100Row1 = data.HandleData.TNL3100_ROW1;
-        window.tnl3100Row2 = data.HandleData.TNL3100_ROW2;
-      }
-    }, 100);
+  // expose busy globally for transfer modules
+  window.__thewayBusy = data?.busy === true;
 
-    ipcRenderer.removeAllListeners("dataReceived");
-    ipcRenderer.on("dataReceived", onDataReceived);
+  const now = performance.now();
 
-    return () => {
-      ipcRenderer.removeListener("dataReceived", onDataReceived);
-      if (typeof onDataReceived.cancel === "function") {
-        onDataReceived.cancel();
-      }
-    };
-  }, [dispatch]);
+    if (data?.busy !== lastBusy) {
+      const delta =
+        lastBusyTs == null ? "first" : `${Math.round(now - lastBusyTs)}ms`;
+
+      console.log(
+        `[BUSY] ${Math.round(now)}ms | ${lastBusy} -> ${data?.busy} | gap: ${delta}`
+      );
+
+      lastBusy = data?.busy;
+      lastBusyTs = now;
+    }
+
+    dispatch(dcsPointActions.changeCoords(data));
+
+    if (data?.HandleData) {
+      window.tnl3100Row1 = data.HandleData.TNL3100_ROW1;
+      window.tnl3100Row2 = data.HandleData.TNL3100_ROW2;
+    }
+  }, 100);
+
+  ipcRenderer.removeAllListeners("dataReceived");
+  ipcRenderer.on("dataReceived", onDataReceived);
+
+  return () => {
+    ipcRenderer.removeListener("dataReceived", onDataReceived);
+    if (typeof onDataReceived.cancel === "function") {
+      onDataReceived.cancel();
+    }
+  };
+}, [dispatch]);
 };
 
 export default useElectronIpcListeners;

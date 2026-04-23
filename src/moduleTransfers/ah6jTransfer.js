@@ -11,11 +11,6 @@ function applyExtraDelay(commands, buttonExtraDelay) {
   }));
 }
 
-function estimateRuntime(commands, buffer = 500) {
-  const total = (commands || []).reduce((sum, cmd) => sum + (cmd.delay ?? 0), 0);
-  return total + buffer;
-}
-
 function isReplaceModule(module) {
   return /(?:_|-)REPLACE$/i.test(module || "");
 }
@@ -67,6 +62,52 @@ function throwIfAborted() {
   }
 }
 
+function getBusy() {
+  return window.__thewayBusy === true;
+}
+
+async function waitForBusyCycle({
+  appearTimeout = 5000,
+  clearTimeout = 15000,
+  settleMs = 300,
+  pollMs = 50,
+} = {}) {
+  const appearStart = Date.now();
+
+  // wait for busy to go true
+  while (!getBusy()) {
+    throwIfAborted();
+
+    if (Date.now() - appearStart > appearTimeout) {
+      throw new Error("AH6J_BUSY_DID_NOT_GO_TRUE");
+    }
+
+    await sleep(pollMs);
+  }
+
+  const clearStart = Date.now();
+
+  // wait for busy to go false
+  while (getBusy()) {
+    throwIfAborted();
+
+    if (Date.now() - clearStart > clearTimeout) {
+      throw new Error("AH6J_BUSY_DID_NOT_CLEAR");
+    }
+
+    await sleep(pollMs);
+  }
+
+  // settle before next batch
+  await sleep(settleMs);
+  throwIfAborted();
+}
+
+async function sendCommandsAndWaitForBusy(ipcRenderer, commands) {
+  await sendCommands(ipcRenderer, commands);
+  await waitForBusyCycle();
+}
+
 async function prepareReplaceMode({ buttonExtraDelay, ipcRenderer }) {
   let wp0SeenInARow = 0;
 
@@ -85,8 +126,7 @@ async function prepareReplaceMode({ buttonExtraDelay, ipcRenderer }) {
         buttonExtraDelay,
       );
 
-      await sendCommands(ipcRenderer, deleteCurrent);
-      await sleep(estimateRuntime(deleteCurrent));
+      await sendCommandsAndWaitForBusy(ipcRenderer, deleteCurrent);
       throwIfAborted();
     }
 
@@ -95,8 +135,7 @@ async function prepareReplaceMode({ buttonExtraDelay, ipcRenderer }) {
       buttonExtraDelay,
     );
 
-    await sendCommands(ipcRenderer, stepPrevious);
-    await sleep(estimateRuntime(stepPrevious, 300));
+    await sendCommandsAndWaitForBusy(ipcRenderer, stepPrevious);
   }
 }
 
@@ -122,8 +161,7 @@ export default async function ah6jTransfer({
       buttonExtraDelay,
     );
 
-    await sendCommands(ipcRenderer, initial);
-    await sleep(estimateRuntime(initial));
+    await sendCommandsAndWaitForBusy(ipcRenderer, initial);
     throwIfAborted();
 
     const newFlightPlanMode = isNewFlightPlanModule(module);
@@ -141,16 +179,14 @@ export default async function ah6jTransfer({
         buttonExtraDelay,
       );
 
-      await sendCommands(ipcRenderer, openCreate);
-      await sleep(estimateRuntime(openCreate));
+      await sendCommandsAndWaitForBusy(ipcRenderer, openCreate);
       throwIfAborted();
 
-            const display = {
+      const display = {
         row2: await readRow2(ipcRenderer),
       };
 
-
-      // allow TNL3100 page to settle before sending first command
+      // keep this for now, even with busy-driven batching
       await sleep(300 + buttonExtraDelay);
 
       const commands = applyExtraDelay(
@@ -162,8 +198,7 @@ export default async function ah6jTransfer({
         buttonExtraDelay,
       );
 
-      await sendCommands(ipcRenderer, commands);
-      await sleep(estimateRuntime(commands));
+      await sendCommandsAndWaitForBusy(ipcRenderer, commands);
       throwIfAborted();
     }
 
@@ -175,8 +210,7 @@ export default async function ah6jTransfer({
         buttonExtraDelay,
       );
 
-      await sendCommands(ipcRenderer, buildFlightPlan);
-      await sleep(estimateRuntime(buildFlightPlan, 1500));
+      await sendCommandsAndWaitForBusy(ipcRenderer, buildFlightPlan);
       throwIfAborted();
     }
   } catch (err) {

@@ -12,40 +12,54 @@ const TransferControls = (props) => {
   const allowTransfer = allowSaveFile && module && module !== "Spectator";
 
     function button() {
-    // Use our override instead of raw Redux busy
-    const isRunning = props.transferRunning ?? effectiveBusy;
-    const isAborting = props.transferAborting === true;
+  const isRunning =
+  props.transferRunning === true || effectiveBusy === true;
+  const isAborting = props.transferAborting === true;
 
-    if (isRunning) {
-      return (
-        <Fab
-          variant="extended"
-          color={isAborting ? "error" : "warning"}
-          onClick={isAborting ? undefined : props.onAbort}
-          disabled={isAborting}
-        >
-          <Typography variant="button" pr={2}>
-            <b>{isAborting ? "Aborting..." : "Abort transfer"}</b>
-          </Typography>
-          <SendIcon />
-        </Fab>
-      );
-    } else {
-      return (
-        <Fab
-          variant="extended"
-          color="primary"
-          onClick={props.onTransfer}
-          disabled={!allowTransfer}
-        >
-          <Typography variant="button" pr={2}>
-            <b>Transfer to DCS</b>
-          </Typography>
-          <SendIcon />
-        </Fab>
-      );
-    }
+  if (isAborting) {
+    return (
+      <Fab
+        variant="extended"
+        color="error"
+        disabled
+      >
+        <Typography variant="button" pr={2}>
+          <b>Aborting...</b>
+        </Typography>
+        <SendIcon />
+      </Fab>
+    );
   }
+
+  if (isRunning) {
+    return (
+      <Fab
+        variant="extended"
+        color="warning"
+        onClick={props.onAbort}
+      >
+        <Typography variant="button" pr={2}>
+          <b>Abort transfer</b>
+        </Typography>
+        <SendIcon />
+      </Fab>
+    );
+  }
+
+  return (
+    <Fab
+      variant="extended"
+      color="primary"
+      onClick={props.onTransfer}
+      disabled={!allowTransfer}
+    >
+      <Typography variant="button" pr={2}>
+        <b>Transfer to DCS</b>
+      </Typography>
+      <SendIcon />
+    </Fab>
+  );
+}
 
   return (
     <>

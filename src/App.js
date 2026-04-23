@@ -41,6 +41,7 @@ function App() {
   const [isSelecting, setIsSelecting] = useState(false);
   const [transferRunning, setTransferRunning] = useState(false);
   const [transferAborting, setTransferAborting] = useState(false);
+  const [activeTransferModule, setActiveTransferModule] = useState(null);
 
   const buttonExtraDelay = userPreferences["buttonDelay"] ?? 0;
   const oldCrosshair = userPreferences["oldCrosshair"];
@@ -108,47 +109,60 @@ function App() {
     };
   }, []);
 
-  const handleTransfer = useCallback(async () => {
-    if (!module || !dcsWaypoints.length) return;
+ const handleTransfer = useCallback(async () => {
+  if (!module || !dcsWaypoints.length) return;
 
+  setTransferAborting(false);
+
+  const moduleWaypoints = ConvertModuleWaypoints(dcsWaypoints, module);
+  const chosenSeat = await askUserAboutSeat(module, userPreferences);
+  const transferModule = GetTransferCommands(chosenSeat);
+
+  if (transferModule?.runTransfer) {
     setTransferRunning(true);
-    setTransferAborting(false);
+    setActiveTransferModule(chosenSeat);
 
     try {
-      const moduleWaypoints = ConvertModuleWaypoints(dcsWaypoints, module);
-      const chosenSeat = await askUserAboutSeat(module, userPreferences);
-
-      const transferModule = GetTransferCommands(chosenSeat);
-
-      if (transferModule?.runTransfer) {
-        await transferModule.runTransfer({
-          module: chosenSeat,
-          moduleWaypoints,
-          buttonExtraDelay,
-          ipcRenderer,
-          setRunning: setTransferRunning,
-        });
-        return;
-      }
-
-      ipcRenderer.send("messageToDcs", {
-        type: "waypoints",
-        payload: GetModuleCommands(chosenSeat, moduleWaypoints, buttonExtraDelay),
+      await transferModule.runTransfer({
+        module: chosenSeat,
+        moduleWaypoints,
+        buttonExtraDelay,
+        ipcRenderer,
+        setRunning: setTransferRunning,
       });
     } finally {
       setTransferRunning(false);
       setTransferAborting(false);
+      setActiveTransferModule(null);
     }
-  }, [dcsWaypoints, module, userPreferences, buttonExtraDelay]);
+    return;
+  }
+
+  setTransferRunning(false);
+  setActiveTransferModule(null);
+
+  ipcRenderer.send("messageToDcs", {
+    type: "waypoints",
+    payload: GetModuleCommands(chosenSeat, moduleWaypoints, buttonExtraDelay),
+  });
+}, [dcsWaypoints, module, userPreferences, buttonExtraDelay]);
 
   const handleAbort = useCallback(() => {
-    setTransferAborting(true); // NEW
+  if (activeTransferModule) {
+    setTransferAborting(true);
 
-    const transferModule = GetTransferCommands(module);
+    const transferModule = GetTransferCommands(activeTransferModule);
     transferModule?.requestAbort?.();
+  }
 
-    ipcRenderer.send("messageToDcs", { type: "abort" });
-  }, [module]);
+  ipcRenderer.send("messageToDcs", { type: "abort" });
+
+  if (!activeTransferModule) {
+    setTransferRunning(false);
+    setTransferAborting(false);
+    setActiveTransferModule(null);
+  }
+}, [activeTransferModule]);
 
   const handleFileSave = useCallback(() => {
     ipcRenderer.send("saveFile", JSON.stringify(dcsWaypoints));
@@ -245,7 +259,8 @@ function App() {
             transferAborting={transferAborting}
             onTransfer={handleTransfer}
             onAbort={handleAbort}
-            />
+            onSaveFile={handleFileSave}
+          />
         </Box>
       </Box>
     </ThemeProvider>

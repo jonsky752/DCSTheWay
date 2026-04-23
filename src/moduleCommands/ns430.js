@@ -500,26 +500,14 @@ class ns430 {
     }
 
     this.#holdCLR();
-    this.#CLR();
-    this.#pause(200);
+    this.#pause(400);
     this.#BIGl();
     this.#BIGr();
-    //this.#BIGr();
-   
+    this.#pause(600);
 
-    this.#CLR();
-
-    return this.getPayload();
-  }
-
-  static buildFinalSetupPushCommands() {
-    this.resetPayload();
-
-    this.#CLR();
-    this.#pause(100);
     this.#SMALLp();
-    this.#pause(200);
-
+    this.#pause(300);
+   
     return this.getPayload();
   }
 
@@ -602,7 +590,7 @@ class ns430 {
     this.#pause(500);
     this.#ENT();
     this.#pause(500);
-
+   
     return this.getPayload();
   }
 

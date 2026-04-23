@@ -142,22 +142,34 @@ const askUserAboutSeat = async (module, userPreferences) => {
     return `F-15ESE_${seat.toLowerCase()}_${route}`;
   }
 
-  // FA-18
-  else if (
-    module === "FA-18C_hornet" ||
-    module === "FA-18E" ||
-    module === "FA-18F" ||
-    module === "EA-18G"
-  ) {
-    let PPinput = await FourOptionsDialog({
+    // FA-18
+else if (
+  module === "FA-18C_hornet" ||
+  module === "FA-18E" ||
+  module === "FA-18F" ||
+  module === "EA-18G"
+) {
+  let PPinput;
+
+  if (moduleSpecificPreferences?.includes("YES")) PPinput = "YES";
+  else if (moduleSpecificPreferences?.includes("NO")) PPinput = "NO";
+  else {
+    PPinput = await FourOptionsDialog({
       title: "Input as PP MSN?",
       op1: "YES",
       op2: "NO",
     });
+  }
 
-    let stations = "";
-    if (PPinput === "YES") {
-      stations = await FourOptionsSimpleDialog({
+  let stations = "";
+
+  if (PPinput === "YES") {
+    if (moduleSpecificPreferences?.includes("1")) stations = "1";
+    else if (moduleSpecificPreferences?.includes("2")) stations = "2";
+    else if (moduleSpecificPreferences?.includes("3")) stations = "3";
+    else if (moduleSpecificPreferences?.includes("4")) stations = "4";
+    else {
+      stations = await FourOptionsDialog({
         title: "How many STATIONs carry this weapon?",
         op1: "1",
         op2: "2",
@@ -165,9 +177,11 @@ const askUserAboutSeat = async (module, userPreferences) => {
         op4: "4",
       });
     }
-
-    return `FA-18C_hornet${PPinput === "YES" ? "PP" : ""}${stations}`;
   }
+
+ 
+ return `FA-18C_hornet${PPinput === "YES" ? "PP" : ""}${stations}`;
+}
 
   // default
   else return module;

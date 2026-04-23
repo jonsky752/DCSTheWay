@@ -25,11 +25,6 @@ function applyExtraDelay(commands, buttonExtraDelay) {
   }));
 }
 
-function estimateRuntime(commands, buffer = 500) {
-  const total = (commands || []).reduce((sum, cmd) => sum + (cmd.delay ?? 0), 0);
-  return total + buffer;
-}
-
 // ============================================================
 // DCS COMMUNICATION
 // ============================================================
@@ -39,6 +34,56 @@ async function sendCommands(ipcRenderer, commands) {
     type: "waypoints",
     payload: commands,
   });
+}
+
+// ============================================================
+// BUSY-DRIVEN WAIT HELPERS
+// ============================================================
+
+function getBusy() {
+  return window.__thewayBusy === true;
+}
+
+async function waitForBusyCycle({
+  appearTimeout = 5000,
+  clearTimeout = 60000,
+  settleMs = 300,
+  pollMs = 50,
+} = {}) {
+  const appearStart = Date.now();
+
+  // Wait for busy to become true
+  while (!getBusy()) {
+    throwIfAborted();
+
+    if (Date.now() - appearStart > appearTimeout) {
+      throw new Error("NS430_BUSY_DID_NOT_GO_TRUE");
+    }
+
+    await sleep(pollMs);
+  }
+
+  const clearStart = Date.now();
+
+  // Wait for busy to become false
+  while (getBusy()) {
+    throwIfAborted();
+
+    if (Date.now() - clearStart > clearTimeout) {
+      throw new Error("NS430_BUSY_DID_NOT_CLEAR");
+    }
+
+    await sleep(pollMs);
+  }
+
+  // Small settle pause before next batch
+  await sleep(settleMs);
+  throwIfAborted();
+}
+
+async function sendCommandsAndWaitForBusy(ipcRenderer, commands) {
+  await sendCommands(ipcRenderer, commands);
+  await waitForBusyCycle();
 }
 
 // ============================================================
@@ -175,22 +220,9 @@ export default async function ns430Transfer({
     // ========================================================
 
     const setup = applyExtraDelay(ns430.buildSetupCommands(), buttonExtraDelay);
-    await sendCommands(ipcRenderer, setup);
-    await sleep(estimateRuntime(setup, 2000));
+    await sendCommandsAndWaitForBusy(ipcRenderer, setup);
     throwIfAborted();
 
-    // ========================================================
-    // FINAL SETUP PUSH
-    // Rotary push to exit delete menu cleanly
-    // ========================================================
-
-    const setupPush = applyExtraDelay(
-      ns430.buildFinalSetupPushCommands(),
-      buttonExtraDelay,
-    );
-    await sendCommands(ipcRenderer, setupPush);
-    await sleep(estimateRuntime(setupPush, 1200));
-    throwIfAborted();
 
     // ========================================================
     // MAIN WAYPOINT ENTRY LOOP
@@ -211,8 +243,7 @@ export default async function ns430Transfer({
         ns430.buildNameCharactersCommands(waypointName),
         buttonExtraDelay,
       );
-      await sendCommands(ipcRenderer, nameChars);
-      await sleep(estimateRuntime(nameChars, 2200));
+      await sendCommandsAndWaitForBusy(ipcRenderer, nameChars);
       throwIfAborted();
 
       // ----------------------------------------------------
@@ -232,8 +263,7 @@ export default async function ns430Transfer({
         ns430.buildConfirmNameCommands(),
         buttonExtraDelay,
       );
-      await sendCommands(ipcRenderer, confirmName);
-      await sleep(estimateRuntime(confirmName, 1000));
+      await sendCommandsAndWaitForBusy(ipcRenderer, confirmName);
       throwIfAborted();
 
       // ----------------------------------------------------
@@ -244,8 +274,7 @@ export default async function ns430Transfer({
         ns430.buildMoveToPositionFieldCommands(),
         buttonExtraDelay,
       );
-      await sendCommands(ipcRenderer, moveToPos);
-      await sleep(estimateRuntime(moveToPos, 1000));
+      await sendCommandsAndWaitForBusy(ipcRenderer, moveToPos);
       throwIfAborted();
 
       // ----------------------------------------------------
@@ -258,8 +287,7 @@ export default async function ns430Transfer({
         buttonExtraDelay,
       );
 
-      await sendCommands(ipcRenderer, coordinateEntry);
-      await sleep(estimateRuntime(coordinateEntry, 1000));
+      await sendCommandsAndWaitForBusy(ipcRenderer, coordinateEntry);
       throwIfAborted();
     }
 
@@ -272,8 +300,7 @@ export default async function ns430Transfer({
       ns430.buildSaveWaypointCommands(),
       buttonExtraDelay,
     );
-    await sendCommands(ipcRenderer, saveWaypoint);
-    await sleep(estimateRuntime(saveWaypoint, 1000));
+    await sendCommandsAndWaitForBusy(ipcRenderer, saveWaypoint);
     throwIfAborted();
 
     // ========================================================
@@ -284,8 +311,7 @@ export default async function ns430Transfer({
       ns430.buildFlightPlanCreateStartCommands(),
       buttonExtraDelay,
     );
-    await sendCommands(ipcRenderer, createFlightPlanStart);
-    await sleep(estimateRuntime(createFlightPlanStart, 1000));
+    await sendCommandsAndWaitForBusy(ipcRenderer, createFlightPlanStart);
     throwIfAborted();
 
     // ========================================================
@@ -294,22 +320,22 @@ export default async function ns430Transfer({
     // ========================================================
 
     for (let i = 0; i < moduleWaypoints.length; i += 1) {
-  throwIfAborted();
+      throwIfAborted();
 
-  const wp = moduleWaypoints[i];
-  const waypointName = formatNs430WaypointName(wp?.name, i);
-  const useFastListMethod = isDefaultWaypointName(wp?.name, i);
+      const wp = moduleWaypoints[i];
+      const waypointName = formatNs430WaypointName(wp?.name, i);
+      const useFastListMethod = isDefaultWaypointName(wp?.name, i);
 
-  const addFlightPlanWaypoint = applyExtraDelay(
-    useFastListMethod
-      ? ns430.buildFlightPlanAddWaypointFromListCommands(i + 1)
-      : ns430.buildFlightPlanAddWaypointCommands(waypointName, i + 1),
-    buttonExtraDelay,
-  );
-  await sendCommands(ipcRenderer, addFlightPlanWaypoint);
-  await sleep(estimateRuntime(addFlightPlanWaypoint, 1500));
-  throwIfAborted();
-}
+      const addFlightPlanWaypoint = applyExtraDelay(
+        useFastListMethod
+          ? ns430.buildFlightPlanAddWaypointFromListCommands(i + 1)
+          : ns430.buildFlightPlanAddWaypointCommands(waypointName, i + 1),
+        buttonExtraDelay,
+      );
+
+      await sendCommandsAndWaitForBusy(ipcRenderer, addFlightPlanWaypoint);
+      throwIfAborted();
+    }
 
     // ========================================================
     // ACTIVATE FLIGHT PLAN
@@ -319,8 +345,7 @@ export default async function ns430Transfer({
       ns430.buildFlightPlanActivateCommands(moduleWaypoints.length),
       buttonExtraDelay,
     );
-    await sendCommands(ipcRenderer, activateFlightPlan);
-    await sleep(estimateRuntime(activateFlightPlan, 1000));
+    await sendCommandsAndWaitForBusy(ipcRenderer, activateFlightPlan);
     throwIfAborted();
 
   } catch (err) {
