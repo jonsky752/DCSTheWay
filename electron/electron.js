@@ -23,6 +23,7 @@ const CrosshairWindow = require("./CrosshairWindow");
 const FileHandler = require("./fileHandler");
 const setupKeybinds = require("./keybindListener");
 
+
 let mainWindow;
 let crosshairWindow;
 let unitImportWindow;
@@ -39,7 +40,10 @@ let suppressRestoreFocus = false;
 let isQuitting = false;
 
 const winStore = new Store({ name: "window-state" });
-const ICON_ICO = path.join(__dirname, "../public/TheWayIcon.ico");
+
+const ASSET_DIR = path.join(__dirname, "assets");
+const ICON_ICO = path.join(ASSET_DIR, "TheWayIcon.ico");
+const ICON_PNG = path.join(ASSET_DIR, "TheWayIcon.png");
 
 function buildAppUrl(windowName) {
   const suffix = windowName ? `?window=${windowName}` : "";
@@ -223,7 +227,7 @@ function ensurePillWindow() {
 
   let iconDataUrl = "";
   try {
-    const img = nativeImage.createFromPath(ICON_ICO).resize({ width: 28, height: 28 });
+    const img = nativeImage.createFromPath(ICON_PNG).resize({ width: 28, height: 28 });
     iconDataUrl = img.toDataURL();
   } catch {
     iconDataUrl = "";
