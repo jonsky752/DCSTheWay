@@ -179,6 +179,9 @@ else if (
     }
   }
 
+return `FA-18C_hornet${PPinput === "YES" ? "PP" : ""}${stations}`;
+}
+
   else if (module === "OH58D") {
   if (moduleSpecificPreferences?.includes("Left Seat"))
     return "OH58Dleft-seat";
@@ -197,9 +200,7 @@ else if (
     : "OH58Dleft-seat";
 }
 
- 
- return `FA-18C_hornet${PPinput === "YES" ? "PP" : ""}${stations}`;
-}
+
 
   // default
   else return module;
