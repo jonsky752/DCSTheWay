@@ -182,25 +182,24 @@ else if (
 return `FA-18C_hornet${PPinput === "YES" ? "PP" : ""}${stations}`;
 }
 
+  // OH-58D
   else if (module === "OH58D") {
-  if (moduleSpecificPreferences?.includes("Left Seat"))
-    return "OH58Dleft-seat";
+    if (moduleSpecificPreferences?.includes("Left Seat"))
+      return "OH58Dleft-seat";
 
-  if (moduleSpecificPreferences?.includes("Right Seat"))
-    return "OH58Dright-seat";
+    if (moduleSpecificPreferences?.includes("Right Seat"))
+      return "OH58Dright-seat";
 
-  const option = await FourOptionsDialog({
-    title: "What seat are you in?",
-    op1: "Left Seat",
-    op2: "Right Seat",
-  });
+    const option = await FourOptionsDialog({
+      title: "What seat are you in?",
+      op1: "Left Seat",
+      op2: "Right Seat",
+    });
 
-  return option === "Right Seat"
-    ? "OH58Dright-seat"
-    : "OH58Dleft-seat";
-}
-
-
+    return option === "Right Seat"
+      ? "OH58Dright-seat"
+      : "OH58Dleft-seat";
+  }
 
   // default
   else return module;
