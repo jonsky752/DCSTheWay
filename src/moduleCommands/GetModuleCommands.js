@@ -5,6 +5,7 @@ import ah64 from "./ah64";
 import av8b from "./av8b";
 import c130j from "./c130j";
 import ch47f from "./ch47f";
+import f14bu from "./f14bu";
 import f15e from "./f15e";
 import f16 from "./f16";
 import fa18 from "./fa18";
@@ -28,7 +29,6 @@ export default function getModuleCommands(module, waypoints, buttonExtraDelay) {
   let commands = [];
 
   switch (module) {
-
     case "a10ADD":
     case "a10NEW":
       a10.slotVariant = module;
@@ -91,6 +91,11 @@ export default function getModuleCommands(module, waypoints, buttonExtraDelay) {
       fa18.slotVariant = module;
       fa18.extraDelay = 0;
       commands = fa18.createButtonCommands(waypoints);
+      break;
+
+    case "F-14BU":
+      f14bu.extraDelay = 0;
+      commands = f14bu.createButtonCommands(waypoints);
       break;
 
     case "F-15ESE_pilot_targetpoints":

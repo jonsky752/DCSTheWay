@@ -10,7 +10,8 @@ const askUserAboutSeat = async (module, userPreferences) => {
   // A-10C/2
   if (module === "A-10C" || module === "A-10C_2") {
     if (moduleSpecificPreferences?.includes("Add Waypoints")) return "a10ADD";
-    if (moduleSpecificPreferences?.includes("Overwrite Waypoints")) return "a10NEW";
+    if (moduleSpecificPreferences?.includes("Overwrite Waypoints"))
+      return "a10NEW";
 
     const option = await FourOptionsDialog({
       title: "Would you like to?",
@@ -23,9 +24,12 @@ const askUserAboutSeat = async (module, userPreferences) => {
 
   // ✅ RESTORED AH-6J / MH-6J (CRITICAL)
   else if (module === "AH-6J" || module === "MH-6J") {
-    if (moduleSpecificPreferences?.includes("Add Waypoints")) return `${module}_ADD`;
-    if (moduleSpecificPreferences?.includes("Replace Waypoints")) return `${module}_REPLACE`;
-    if (moduleSpecificPreferences?.includes("NEW FPLN FROM LIST")) return `${module}_NEWFPLN`;
+    if (moduleSpecificPreferences?.includes("Add Waypoints"))
+      return `${module}_ADD`;
+    if (moduleSpecificPreferences?.includes("Replace Waypoints"))
+      return `${module}_REPLACE`;
+    if (moduleSpecificPreferences?.includes("NEW FPLN FROM LIST"))
+      return `${module}_NEWFPLN`;
 
     const option = await FourOptionsDialog({
       title: "Would you like to?",
@@ -46,24 +50,25 @@ const askUserAboutSeat = async (module, userPreferences) => {
 
   // AH-64D
   else if (module === "AH-64D_BLK_II") {
-    if (moduleSpecificPreferences?.includes("Pilot")) return "AH-64D_BLK_IIpilot";
-    if (moduleSpecificPreferences?.includes("CPG/Gunner")) return "AH-64D_BLK_IIgunner";
+    if (moduleSpecificPreferences?.includes("Pilot"))
+      return "AH-64D_BLK_IIpilot";
+    if (moduleSpecificPreferences?.includes("CPG/Gunner"))
+      return "AH-64D_BLK_IIgunner";
 
     return FourOptionsDialog({
       title: "What seat are you in?",
       op1: "Pilot",
       op2: "CPG/Gunner",
     }).then((option) =>
-      option === "CPG/Gunner"
-        ? "AH-64D_BLK_IIgunner"
-        : "AH-64D_BLK_IIpilot"
+      option === "CPG/Gunner" ? "AH-64D_BLK_IIgunner" : "AH-64D_BLK_IIpilot",
     );
   }
 
   // AV8BNA
   else if (module === "AV8BNA") {
     if (moduleSpecificPreferences?.includes("Waypoints")) return "AV8BNA_WPT";
-    if (moduleSpecificPreferences?.includes("Targetpoints")) return "AV8BNA_TRGPT";
+    if (moduleSpecificPreferences?.includes("Targetpoints"))
+      return "AV8BNA_TRGPT";
 
     const option = await FourOptionsDialog({
       title: "Transfer to waypoints or target points?",
@@ -92,8 +97,10 @@ const askUserAboutSeat = async (module, userPreferences) => {
   else if (module === "CH-47Fbl1") {
     if (moduleSpecificPreferences?.includes("Add to FLPN")) return "ch47ADD";
     if (moduleSpecificPreferences?.includes("Make New FLPN")) return "ch47NEW";
-    if (moduleSpecificPreferences?.includes("Add to ALT FLPN")) return "ch47ALTADD";
-    if (moduleSpecificPreferences?.includes("Make New ALT FLPN")) return "ch47ALTNEW";
+    if (moduleSpecificPreferences?.includes("Add to ALT FLPN"))
+      return "ch47ALTADD";
+    if (moduleSpecificPreferences?.includes("Make New ALT FLPN"))
+      return "ch47ALTNEW";
 
     const option = await FourOptionsDialog({
       title: "Would you like to?",
@@ -104,12 +111,35 @@ const askUserAboutSeat = async (module, userPreferences) => {
     });
 
     switch (option) {
-      case "Add to FLPN": return "ch47ADD";
-      case "Make New FLPN": return "ch47NEW";
-      case "Add to ALT FLPN": return "ch47ALTADD";
-      case "Make New ALT FLPN": return "ch47ALTNEW";
-      default: throw new Error("Invalid option selected");
+      case "Add to FLPN":
+        return "ch47ADD";
+      case "Make New FLPN":
+        return "ch47NEW";
+      case "Add to ALT FLPN":
+        return "ch47ALTADD";
+      case "Make New ALT FLPN":
+        return "ch47ALTNEW";
+      default:
+        throw new Error("Invalid option selected");
     }
+  }
+
+  // F-14B(U) CDNU
+  else if (module === "F-14BU") {
+    if (moduleSpecificPreferences?.includes("Hide")) return "F-14BU";
+
+    await AlertDialog({
+      title: "Please make sure that",
+      content:
+        "1. You are in the RIO seat with the CDNU powered on\n" +
+        "2. You are on the ground and not moving\n" +
+        "3. The CDNU is showing the FPLN page\n" +
+        "4. You do not touch the CDNU during the transfer\n" +
+        "Points are numbered from 51 up, in the order they are listed here. " +
+        "Set navigation to EGI to see them on the HUD and displays.",
+    });
+
+    return "F-14BU";
   }
 
   // F-15E
@@ -142,45 +172,45 @@ const askUserAboutSeat = async (module, userPreferences) => {
     return `F-15ESE_${seat.toLowerCase()}_${route}`;
   }
 
-    // FA-18
-else if (
-  module === "FA-18C_hornet" ||
-  module === "FA-18E" ||
-  module === "FA-18F" ||
-  module === "EA-18G"
-) {
-  let PPinput;
+  // FA-18
+  else if (
+    module === "FA-18C_hornet" ||
+    module === "FA-18E" ||
+    module === "FA-18F" ||
+    module === "EA-18G"
+  ) {
+    let PPinput;
 
-  if (moduleSpecificPreferences?.includes("YES")) PPinput = "YES";
-  else if (moduleSpecificPreferences?.includes("NO")) PPinput = "NO";
-  else {
-    PPinput = await FourOptionsDialog({
-      title: "Input as PP MSN?",
-      op1: "YES",
-      op2: "NO",
-    });
-  }
-
-  let stations = "";
-
-  if (PPinput === "YES") {
-    if (moduleSpecificPreferences?.includes("1")) stations = "1";
-    else if (moduleSpecificPreferences?.includes("2")) stations = "2";
-    else if (moduleSpecificPreferences?.includes("3")) stations = "3";
-    else if (moduleSpecificPreferences?.includes("4")) stations = "4";
+    if (moduleSpecificPreferences?.includes("YES")) PPinput = "YES";
+    else if (moduleSpecificPreferences?.includes("NO")) PPinput = "NO";
     else {
-      stations = await FourOptionsDialog({
-        title: "How many STATIONs carry this weapon?",
-        op1: "1",
-        op2: "2",
-        op3: "3",
-        op4: "4",
+      PPinput = await FourOptionsDialog({
+        title: "Input as PP MSN?",
+        op1: "YES",
+        op2: "NO",
       });
     }
-  }
 
-return `FA-18C_hornet${PPinput === "YES" ? "PP" : ""}${stations}`;
-}
+    let stations = "";
+
+    if (PPinput === "YES") {
+      if (moduleSpecificPreferences?.includes("1")) stations = "1";
+      else if (moduleSpecificPreferences?.includes("2")) stations = "2";
+      else if (moduleSpecificPreferences?.includes("3")) stations = "3";
+      else if (moduleSpecificPreferences?.includes("4")) stations = "4";
+      else {
+        stations = await FourOptionsDialog({
+          title: "How many STATIONs carry this weapon?",
+          op1: "1",
+          op2: "2",
+          op3: "3",
+          op4: "4",
+        });
+      }
+    }
+
+    return `FA-18C_hornet${PPinput === "YES" ? "PP" : ""}${stations}`;
+  }
 
   // OH-58D
   else if (module === "OH58D") {
@@ -196,9 +226,7 @@ return `FA-18C_hornet${PPinput === "YES" ? "PP" : ""}${stations}`;
       op2: "Right Seat",
     });
 
-    return option === "Right Seat"
-      ? "OH58Dright-seat"
-      : "OH58Dleft-seat";
+    return option === "Right Seat" ? "OH58Dright-seat" : "OH58Dleft-seat";
   }
 
   // default

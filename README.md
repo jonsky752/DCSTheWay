@@ -13,6 +13,7 @@ Supported modules:
 * AV8BNA Harrier
 * CH-47F Chinook
 * C-130J-30
+* F-14B(U) (RIO CDNU)
 * F-15E
 * F-16 (& All IDF Mods Project F16s)
 * F/A-18C (& Superbug FA-18E/F/G) 

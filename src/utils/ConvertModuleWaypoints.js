@@ -41,6 +41,43 @@ const convert = (dcsWaypoints, module) => {
       return waypoints;
     }
 
+    case "F-14BU": {
+      // CDNU scratchpad format: ddmm.mmm / dddmm.mmm. No delimiter is allowed
+      // between degrees and minutes, so leading zeros carry the field width.
+      let waypoints = [];
+      const toCdnuDmm = (decimalCoordinate, degreeLength) => {
+        const dmm = Convertors.decimalToDMM(decimalCoordinate);
+        let deg = dmm.deg;
+        let min = dmm.min.toFixed(3);
+        if (Number(min) >= 60) {
+          deg++;
+          min = "00.000";
+        }
+        return (
+          deg.toString().padStart(degreeLength, "0") + min.padStart(6, "0")
+        );
+      };
+      for (const dcsWaypoint of dcsWaypoints) {
+        const name = dcsWaypoint.name;
+        const id = dcsWaypoint.id;
+        const lat = toCdnuDmm(dcsWaypoint.lat, 2);
+        const long = toCdnuDmm(dcsWaypoint.long, 3);
+        const elev = Math.trunc(Convertors.mToF(dcsWaypoint.elev)).toString();
+        const latHem = dcsWaypoint.lat > 0 ? "N" : "S";
+        const longHem = dcsWaypoint.long > 0 ? "E" : "W";
+        waypoints.push({
+          name,
+          id,
+          lat,
+          long,
+          elev,
+          latHem,
+          longHem,
+        });
+      }
+      return waypoints;
+    }
+
     default:
     case "F-15ESE":
     case "F-16C_50":
@@ -89,7 +126,6 @@ const convert = (dcsWaypoints, module) => {
       }
       return waypoints;
     }
-
 
     case "A-10A":
     case "AJS37":
@@ -279,7 +315,10 @@ const convert = (dcsWaypoints, module) => {
       for (const dcsWaypoint of dcsWaypoints) {
         const name = dcsWaypoint.name;
         const id = dcsWaypoint.id;
-        const MGRS = Convertors.decimalToMGRS(dcsWaypoint.lat, dcsWaypoint.long);
+        const MGRS = Convertors.decimalToMGRS(
+          dcsWaypoint.lat,
+          dcsWaypoint.long,
+        );
         const elev = Math.trunc(Convertors.mToF(dcsWaypoint.elev)).toString();
         waypoints.push({
           name,

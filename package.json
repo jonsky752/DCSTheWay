@@ -1,6 +1,6 @@
 {
   "name": "theway",
-  "version": "2.7.3",
+  "version": "2.7.4",
   "private": true,
   "main": "electron/electron.js",
   "dependencies": {
@@ -66,17 +66,16 @@
     "react-test-renderer": "^18.2.0"
   },
   "build": {
-  "productName": "TheWay",
-  "extends": null,
-  "files": [
-    "node_modules",
-    "build/**/*",
-    "electron"
-  ],
-  "win": {
-    "icon": "build/TheWayIcon.ico"
-  }
-}
-,
+    "productName": "TheWay",
+    "extends": null,
+    "files": [
+      "node_modules",
+      "build/**/*",
+      "electron"
+    ],
+    "win": {
+      "icon": "build/TheWayIcon.ico"
+    }
+  },
   "homepage": "./"
 }
