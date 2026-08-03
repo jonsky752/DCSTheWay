@@ -81,6 +81,7 @@ Worry not, feel free to issue a message request on Discord (Doge4634), and we'll
 
 ## Credits
 Special thanks to **aronCiucu** for creating the original app.  
+Special thanks to **jonsky752** for maintaining and updating this fork with newer modules and fixes: https://github.com/jonsky752/DCSTheWay  
 The ED Forums users for their suggestions and help.  
 Thanks to our GitHub contributors for supporting new modules. 
 
