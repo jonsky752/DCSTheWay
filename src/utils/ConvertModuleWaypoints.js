@@ -91,6 +91,56 @@ const convert = (dcsWaypoints, module) => {
     }
 
 
+    case "JF-17": {
+      // JF-17 UFCP DST page expects precise DMS digits without hemisphere:
+      // lat DDMMSSd, long DDDMMSSd, elevation as five feet digits.
+      const decimalToDmsTenths = (decimal) => {
+        const abs = Math.abs(decimal);
+        const deg = Math.floor(abs);
+        const minuteFloat = (abs - deg) * 60;
+        const min = Math.floor(minuteFloat);
+        const sec10 = Math.min(
+          599,
+          Math.floor(((minuteFloat - min) * 60) * 10 + 0.000001)
+        );
+        return { deg, min, sec10 };
+      };
+
+      let waypoints = [];
+      for (const dcsWaypoint of dcsWaypoints) {
+        const name = dcsWaypoint.name;
+        const id = dcsWaypoint.id;
+        const dmsLat = decimalToDmsTenths(dcsWaypoint.lat);
+        const dmsLong = decimalToDmsTenths(dcsWaypoint.long);
+        const lat =
+          dmsLat.deg.toString().padStart(2, "0") +
+          dmsLat.min.toString().padStart(2, "0") +
+          dmsLat.sec10.toString().padStart(3, "0");
+        const long =
+          dmsLong.deg.toString().padStart(3, "0") +
+          dmsLong.min.toString().padStart(2, "0") +
+          dmsLong.sec10.toString().padStart(3, "0");
+        const elev = Math.max(0, Math.trunc(Convertors.mToF(dcsWaypoint.elev)))
+          .toString()
+          .padStart(5, "0");
+        const latHem = dcsWaypoint.lat >= 0 ? "N" : "S";
+        const longHem = dcsWaypoint.long >= 0 ? "E" : "W";
+
+        waypoints.push({
+          name,
+          id,
+          lat,
+          long,
+          elev,
+          latHem,
+          longHem,
+          latHemi: latHem,
+          longHemi: longHem,
+        });
+      }
+      return waypoints;
+    }
+
     case "A-10A":
     case "AJS37":
     case "Bf-109K-4":

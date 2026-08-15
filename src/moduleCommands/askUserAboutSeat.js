@@ -126,20 +126,50 @@ const askUserAboutSeat = async (module, userPreferences) => {
       });
     }
 
-    const jdam = await FourOptionsDialog({
-      title: "Input Type?",
-      op1: "Waypoints",
-      op2: "Target Points",
-      op3: "TP's and TXFR to Weapons",
-    });
+    let route;
 
-    const route = {
-      Waypoints: "waypoints",
-      "Target Points": "targetpoints",
-      "TP's and TXFR to Weapons": "txfr",
-    }[jdam];
+    if (moduleSpecificPreferences?.includes("A{1/A}")) route = "A{1/A}";
+    else if (moduleSpecificPreferences?.includes("B{1/B}")) route = "B{1/B}";
+    else {
+      route = await FourOptionsDialog({
+        title: "What route are you using?",
+        op1: "A{1/A}",
+        op2: "B{1/B}",
+      });
+    }
 
-    return `F-15ESE_${seat.toLowerCase()}_${route}`;
+    let jdam;
+
+    if (moduleSpecificPreferences?.includes("YES")) jdam = "YES";
+    else if (moduleSpecificPreferences?.includes("NO")) jdam = "NO";
+    else {
+      jdam = await FourOptionsDialog({
+        title: "Input for JDAMs?",
+        op1: "YES",
+        op2: "NO",
+      });
+    }
+
+    return `F-15ESE_${seat.toLowerCase()}${route === "A{1/A}" ? "A" : "B"}${jdam === "YES" ? "JDAM" : "NOJDAM"}`;
+  }
+
+  // JF-17
+  else if (module === "JF-17") {
+    let pointType;
+
+    if (moduleSpecificPreferences?.includes("WPT")) pointType = "WPT";
+    else if (moduleSpecificPreferences?.includes("RP")) pointType = "RP";
+    else if (moduleSpecificPreferences?.includes("PP")) pointType = "PP";
+    else {
+      pointType = await FourOptionsDialog({
+        title: "Transfer to JF-17 point type?",
+        op1: "WPT",
+        op2: "RP",
+        op3: "PP",
+      });
+    }
+
+    return `JF-17_${pointType}`;
   }
 
     // FA-18

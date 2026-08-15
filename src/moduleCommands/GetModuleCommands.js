@@ -7,6 +7,7 @@ import c130j from "./c130j";
 import ch47f from "./ch47f";
 import f15e from "./f15e";
 import f16 from "./f16";
+import jf17 from "./jf17";
 import fa18 from "./fa18";
 import hercules from "./Hercules";
 import ka50 from "./ka50";
@@ -93,12 +94,14 @@ export default function getModuleCommands(module, waypoints, buttonExtraDelay) {
       commands = fa18.createButtonCommands(waypoints);
       break;
 
-    case "F-15ESE_pilot_targetpoints":
-    case "F-15ESE_pilot_txfr":
-    case "F-15ESE_pilot_waypoints":
-    case "F-15ESE_wso_targetpoints":
-    case "F-15ESE_wso_txfr":
-    case "F-15ESE_wso_waypoints":
+    case "F-15ESE_pilotAJDAM":
+    case "F-15ESE_wsoAJDAM":
+    case "F-15ESE_pilotBJDAM":
+    case "F-15ESE_wsoBJDAM":
+    case "F-15ESE_pilotANOJDAM":
+    case "F-15ESE_wsoANOJDAM":
+    case "F-15ESE_pilotBNOJDAM":
+    case "F-15ESE_wsoBNOJDAM":
       f15e.slotVariant = module;
       f15e.extraDelay = 0;
       commands = f15e.createButtonCommands(waypoints);
@@ -119,6 +122,14 @@ export default function getModuleCommands(module, waypoints, buttonExtraDelay) {
     case "Hercules":
       hercules.extraDelay = 0;
       commands = hercules.createButtonCommands(waypoints);
+      break;
+
+    case "JF-17_WPT":
+    case "JF-17_RP":
+    case "JF-17_PP":
+      jf17.slotVariant = module;
+      jf17.extraDelay = 0;
+      commands = jf17.createButtonCommands(waypoints);
       break;
 
     case "ka50TGT":
